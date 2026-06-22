@@ -1,0 +1,58 @@
+---
+- name: Reload sshd
+  ansible.builtin.systemd:
+    name: sshd
+    state: reloaded
+
+- name: Reload sysctl
+  ansible.builtin.shell: sysctl --system
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Reload udev
+  ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger
+
+- name: Apply tuned profile
+  ansible.builtin.shell: tuned-adm profile atomik
+
+- name: Enable thermald
+  ansible.builtin.systemd:
+    name: thermald
+    state: started
+    enabled: true
+
+- name: Restart zram
+  ansible.builtin.systemd:
+    name: systemd-zram-setup@zram0.service
+    state: restarted
+
+- name: Enable swapfile service
+  ansible.builtin.systemd:
+    name: atomik-swapfile.service
+    state: started
+    enabled: true
+
+- name: Enable swap unit
+  ansible.builtin.systemd:
+    name: var-swapfile.swap
+    state: started
+    enabled: true
+
+- name: Restart zram
+  ansible.builtin.systemd:
+    name: systemd-zram-setup@zram0.service
+    state: restarted
+
+- name: Enable swapfile service
+  ansible.builtin.systemd:
+    name: atomik-swapfile.service
+    state: started
+    enabled: true
+
+- name: Enable swap unit
+  ansible.builtin.systemd:
+    name: var-swapfile.swap
+    state: started
+    enabled: true
