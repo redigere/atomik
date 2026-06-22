@@ -1,0 +1,7 @@
+
+{% for item in atomik_limits.hard | dict2items %}
+* hard {{ item.key }} {{ item.value }}
+{% endfor %}
+{% for item in atomik_limits.soft | dict2items %}
+* soft {{ item.key }} {{ item.value }}
+{% endfor %}
