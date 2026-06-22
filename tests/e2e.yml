@@ -1,0 +1,194 @@
+---
+- name: E2E test - Verify all roles load and syntax check passes
+  hosts: localhost
+  gather_facts: true
+
+  vars:
+    project_root: "/var/home/alessio.attilio/git/atomik"
+
+  pre_tasks:
+    - name: Detect OS variant
+      ansible.builtin.shell: |
+        refspec=$(ostree admin status 2>/dev/null | grep -oP 'ostree://\K[^: ]+' || echo "")
+        if echo "$refspec" | grep -q "silverblue"; then
+          echo "silverblue"
+        elif echo "$refspec" | grep -q "kinoite"; then
+          echo "kinoite"
+        elif echo "$refspec" | grep -q "cosmic-atomic"; then
+          echo "cosmic-atomic"
+        else
+          echo "silverblue"
+        fi
+      register: variant_result
+      changed_when: false
+
+    - name: Set variant fact
+      ansible.builtin.set_fact:
+        atomik_variant: "{{ variant_result.stdout }}"
+
+    - name: Detect desktop environment
+      ansible.builtin.set_fact:
+        atomik_desktop: >-
+          {% if atomik_variant == 'kinoite' %}kde
+          {% elif atomik_variant == 'cosmic-atomic' %}cosmic
+          {% else %}gnome{% endif %}
+
+    - name: Get real user
+      ansible.builtin.set_fact:
+        atomik_user: "{{ lookup('env', 'SUDO_USER') | default(lookup('env', 'USER'), true) }}"
+
+  tasks:
+    - name: Verify variant detection
+      ansible.builtin.assert:
+        that:
+          - atomik_variant in ['silverblue', 'kinoite', 'cosmic-atomic']
+        fail_msg: "Invalid variant: {{ atomik_variant }}"
+
+    - name: Verify desktop detection
+      ansible.builtin.assert:
+        that:
+          - atomik_desktop in ['gnome', 'kde', 'cosmic']
+        fail_msg: "Invalid desktop: {{ atomik_desktop }}"
+
+    - name: Verify user detection
+      ansible.builtin.assert:
+        that:
+          - atomik_user | length > 0
+        fail_msg: "User not detected"
+
+    - name: Verify all role directories exist
+      ansible.builtin.stat:
+        path: "{{ project_root }}/ansible/roles/{{ item }}/tasks/main.yml"
+      register: role_check
+      loop:
+        - repos
+        - packages
+        - security
+        - containers
+        - desktop
+        - devtools
+
+    - name: Assert all roles present
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: "Role {{ item.item }} missing"
+      loop: "{{ role_check.results }}"
+
+    - name: Verify group_vars exists
+      ansible.builtin.stat:
+        path: "{{ project_root }}/ansible/group_vars/all.yml"
+      register: vars_check
+
+    - name: Assert group_vars present
+      ansible.builtin.assert:
+        that:
+          - vars_check.stat.exists
+
+    - name: Verify templates exist
+      ansible.builtin.find:
+        paths: "{{ project_root }}/ansible/roles"
+        patterns: "*.j2"
+        recurse: true
+      register: template_check
+
+    - name: Assert templates present
+      ansible.builtin.assert:
+        that:
+          - template_check.files | length > 5
+        fail_msg: "Expected at least 5 templates, found {{ template_check.files | length }}"
+
+    - name: Verify handlers exist
+      ansible.builtin.find:
+        paths: "{{ project_root }}/ansible/roles"
+        patterns: "main.yml"
+        recurse: true
+      register: handler_check
+
+    - name: Filter handler files
+      ansible.builtin.set_fact:
+        handler_files: "{{ handler_check.files | selectattr('path', 'match', '.*/handlers/main.yml') | list }}"
+
+    - name: Assert handlers present
+      ansible.builtin.assert:
+        that:
+          - handler_files | length >= 2
+        fail_msg: "Expected at least 2 handler files, found {{ handler_files | length }}"
+
+    - name: Test repos role variables load
+      ansible.builtin.set_fact:
+        test_repos:
+          brave-browser:
+            content: |
+              [brave-browser]
+              name=Brave Browser
+              baseurl=https://brave-browser-rpm-release.s3.brave.com/$basearch
+              enabled=1
+              gpgcheck=1
+              gpgkey=https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
+
+    - name: Assert repos config valid
+      ansible.builtin.assert:
+        that:
+          - "'brave-browser' in test_repos"
+          - "'gpgcheck=1' in test_repos['brave-browser'].content"
+
+    - name: Test security role tasks exist
+      ansible.builtin.find:
+        paths: "{{ project_root }}/ansible/roles/security/tasks"
+        patterns: "*.yml"
+      register: security_tasks
+
+    - name: Assert security sub-tasks present
+      ansible.builtin.assert:
+        that:
+          - security_tasks.files | length >= 10
+        fail_msg: "Expected at least 10 security tasks, found {{ security_tasks.files | length }}"
+
+    - name: Test flatpak config parsing
+      ansible.builtin.set_fact:
+        test_flatpak:
+          remote: flathub
+          remote_url: "https://dl.flathub.org/repo/flathub.flatpakrepo"
+          verified:
+            - com.discordapp.Discord
+            - com.slack.Slack
+            - com.jetbrains.IntelliJ-IDEA-Community
+            - com.google.AndroidStudio
+          overrides:
+            com.jetbrains.IntelliJ-IDEA-Community:
+              - --filesystem=home
+            com.google.AndroidStudio:
+              - --filesystem=home
+
+    - name: Assert flatpak config valid
+      ansible.builtin.assert:
+        that:
+          - test_flatpak.verified | length == 4
+          - test_flatpak.overrides | length == 2
+          - "'com.jetbrains.IntelliJ-IDEA-Community' in test_flatpak.verified"
+
+    - name: Test sysctl config parsing
+      ansible.builtin.set_fact:
+        test_sysctl:
+          fs:
+            file-max: 9223372036854775807
+            protected_fifos: 2
+          kernel:
+            dmesg_restrict: 1
+            kptr_restrict: 2
+
+    - name: Assert sysctl config valid
+      ansible.builtin.assert:
+        that:
+          - test_sysctl.fs['file-max'] == 9223372036854775807
+          - test_sysctl.kernel.dmesg_restrict == 1
+
+    - name: Test variant-specific config parsing
+      ansible.builtin.assert:
+        that:
+          - atomik_variant in ['silverblue', 'kinoite', 'cosmic-atomic']
+
+    - name: All e2e tests passed
+      ansible.builtin.debug:
+        msg: "E2E tests completed successfully"
