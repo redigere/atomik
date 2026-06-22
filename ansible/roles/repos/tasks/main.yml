@@ -1,0 +1,12 @@
+---
+
+- name: Configure third-party repositories
+  ansible.builtin.copy:
+    content: "{{ item.value.content }}"
+    dest: "/etc/yum.repos.d/{{ item.key }}.repo"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ atomik_repositories | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
