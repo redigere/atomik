@@ -1,0 +1,15 @@
+---
+- name: Enable and start firewalld
+  ansible.builtin.systemd:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: Add firewall services
+  ansible.builtin.shell: |
+    firewall-cmd --permanent --add-service {{ item }}
+    firewall-cmd --reload
+  loop: "{{ atomik_firewall_services }}"
+  register: firewall_result
+  changed_when: firewall_result.rc == 0
+  failed_when: false
