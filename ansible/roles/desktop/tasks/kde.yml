@@ -1,0 +1,50 @@
+---
+
+- name: Apply KDE settings
+  ansible.builtin.shell: |
+    kwriteconfig5 --file {{ item.file }} --group {{ item.group }} --key {{ item.key }} {{ item.value | default('') }}
+  become: true
+  become_user: "{{ atomik_user }}"
+  loop: >-
+    {{ atomik_kde_settings.animations | default([]) +
+       atomik_kde_settings.baloo | default([]) +
+       atomik_kde_settings.power | default([]) +
+       atomik_kde_settings.taskbar | default([]) +
+       atomik_kde_settings.telemetry | default([]) +
+       atomik_kde_settings.wallet | default([]) +
+       atomik_kde_settings.restrictions | default([]) }}
+  loop_control:
+    label: "{{ item.file }}/{{ item.group }}/{{ item.key }}"
+  when: item.value is defined
+
+- name: Apply KDE theme settings
+  ansible.builtin.shell: |
+    kwriteconfig5 --file kdeglobals --group General --key theme {{ atomik_kde_theme[atomik_variant].theme }}
+    kwriteconfig5 --file kdeglobals --group General --key ColorScheme {{ atomik_kde_theme[atomik_variant].colorscheme }}
+    kwriteconfig5 --file kdeglobals --group General --key font {{ atomik_kde_theme[atomik_variant].font }}
+    kwriteconfig5 --file kdeglobals --group General --key fixed {{ atomik_kde_theme[atomik_variant].monospace_font }}
+    kwriteconfig5 --file kdeglobals --group Icons --key IconTheme {{ atomik_kde_theme[atomik_variant].icon_theme }}
+    kwriteconfig5 --file kdeglobals --group Icons --key cursorTheme {{ atomik_kde_theme[atomik_variant].cursor_theme }}
+    kwriteconfig5 --file ksplashrc --group KSplash --key Engine none
+    kwriteconfig5 --file ksplashrc --group KSplash --key Theme none
+  become: true
+  become_user: "{{ atomik_user }}"
+  when: atomik_kde_theme[atomik_variant] | length > 0
+
+- name: Deploy KDE panel setup script
+  ansible.builtin.copy:
+    src: kde_panel_setup.js
+    dest: /tmp/kde_panel_setup.js
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+  become: true
+
+- name: Run KDE panel setup
+  ansible.builtin.shell: |
+    busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s "$(cat /tmp/kde_panel_setup.js)"
+  become: true
+  become_user: "{{ atomik_user }}"
+  register: panel_result
+  changed_when: panel_result.rc == 0
+  failed_when: false
