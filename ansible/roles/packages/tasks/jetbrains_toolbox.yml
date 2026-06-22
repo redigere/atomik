@@ -1,0 +1,26 @@
+---
+
+- name: Check JetBrains Toolbox
+  ansible.builtin.stat:
+    path: "/var/home/{{ atomik_user }}/.local/share/JetBrains/Toolbox/bin/jetbrains-toolbox"
+  register: toolbox_bin
+
+- name: Install JetBrains Toolbox
+  when: not toolbox_bin.stat.exists
+  block:
+    - name: Download JetBrains Toolbox
+      ansible.builtin.shell: |
+        dest_dir="$HOME/.local/share/JetBrains/Toolbox"
+        bin_dir="$dest_dir/bin"
+        mkdir -p "$bin_dir"
+        jb_url=$(curl -s "https://data.services.jetbrains.com/products/releases?code=TBA&latest=true&type=release" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['TBA'][0]['downloads']['linux']['link'])")
+        curl -fsSL "$jb_url" -o /tmp/jb-tb.tar.gz
+        tar -xzf /tmp/jb-tb.tar.gz -C /tmp/
+        jb_dir=$(find /tmp -maxdepth 1 -type d -name "jetbrains-toolbox-*" | head -1)
+        if [ -n "$jb_dir" ] && [ -f "$jb_dir/bin/jetbrains-toolbox" ]; then
+          cp "$jb_dir/bin/jetbrains-toolbox" "$bin_dir/jetbrains-toolbox"
+          chmod +x "$bin_dir/jetbrains-toolbox"
+          rm -rf /tmp/jb-tb.tar.gz "$jb_dir"
+        fi
+      become: true
+      become_user: "{{ atomik_user }}"

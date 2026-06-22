@@ -1,0 +1,26 @@
+---
+
+- name: Add Flathub remote
+  ansible.builtin.shell: |
+    flatpak remote-add --if-not-exists {{ atomik_flatpak_remote }} {{ atomik_flatpak_remote_url }}
+  register: remote_result
+  changed_when: remote_result.rc == 0
+  failed_when: false
+
+- name: Install Flatpak applications
+  ansible.builtin.shell: |
+    flatpak install -y {{ atomik_flatpak_remote }} {{ item }}
+  loop: "{{ atomik_flatpak_verified }}"
+  loop_control:
+    label: "{{ item }}"
+  register: flatpak_install_result
+  changed_when: flatpak_install_result.rc == 0
+  failed_when: false
+
+- name: Apply Flatpak overrides
+  ansible.builtin.shell: |
+    flatpak override --user {{ item.key }} {{ item.value | join(' ') }}
+  loop: "{{ atomik_flatpak_overrides | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when: item.value | length > 0
