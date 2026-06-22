@@ -29,13 +29,25 @@
     - name: Detect desktop environment
       ansible.builtin.set_fact:
         atomik_desktop: >-
-          {% if atomik_variant == 'kinoite' %}kde
-          {% elif atomik_variant == 'cosmic-atomic' %}cosmic
-          {% else %}gnome{% endif %}
+          {%- if atomik_variant == 'kinoite' -%}kde
+          {%- elif atomik_variant == 'cosmic-atomic' -%}cosmic
+          {%- else -%}gnome{%- endif -%}
 
     - name: Get real user
+      ansible.builtin.shell: |
+        if [ -n "$SUDO_USER" ]; then
+          echo "$SUDO_USER"
+        elif [ -n "$PKEXEC_UID" ]; then
+          getent passwd "$PKEXEC_UID" | cut -d: -f1
+        else
+          echo "$USER"
+        fi
+      register: user_result
+      changed_when: false
+
+    - name: Set real user
       ansible.builtin.set_fact:
-        atomik_user: "{{ lookup('env', 'SUDO_USER') | default(lookup('env', 'USER'), true) }}"
+        atomik_user: "{{ user_result.stdout }}"
 
   tasks:
     - name: Verify variant detection
@@ -64,7 +76,6 @@
         - repos
         - packages
         - security
-        - containers
         - desktop
         - devtools
 
@@ -153,10 +164,10 @@
           verified:
             - com.discordapp.Discord
             - com.slack.Slack
-            - com.jetbrains.IntelliJ-IDEA-Community
+            - com.jetbrains.IntelliJ-IDEA-Ultimate
             - com.google.AndroidStudio
           overrides:
-            com.jetbrains.IntelliJ-IDEA-Community:
+            com.jetbrains.IntelliJ-IDEA-Ultimate:
               - --filesystem=home
             com.google.AndroidStudio:
               - --filesystem=home
@@ -166,7 +177,7 @@
         that:
           - test_flatpak.verified | length == 4
           - test_flatpak.overrides | length == 2
-          - "'com.jetbrains.IntelliJ-IDEA-Community' in test_flatpak.verified"
+          - "'com.jetbrains.IntelliJ-IDEA-Ultimate' in test_flatpak.verified"
 
     - name: Test sysctl config parsing
       ansible.builtin.set_fact:

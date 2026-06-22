@@ -541,10 +541,10 @@ atomik_flatpak_remote_url: "https://dl.flathub.org/repo/flathub.flatpakrepo"
 atomik_flatpak_verified:
   - com.discordapp.Discord
   - com.slack.Slack
-  - com.jetbrains.IntelliJ-IDEA-Community
+  - com.jetbrains.IntelliJ-IDEA-Ultimate
   - com.google.AndroidStudio
 atomik_flatpak_overrides:
-  com.jetbrains.IntelliJ-IDEA-Community:
+  com.jetbrains.IntelliJ-IDEA-Ultimate:
     - --filesystem=home
   com.google.AndroidStudio:
     - --filesystem=home
