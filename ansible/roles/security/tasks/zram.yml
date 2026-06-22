@@ -1,0 +1,10 @@
+---
+
+- name: Deploy zram config
+  ansible.builtin.copy:
+    content: "{{ atomik_zram_config }}"
+    dest: /etc/systemd/zram-generator.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart zram
