@@ -1,5 +1,13 @@
 ---
 
+- name: Create App Nap script directory
+  ansible.builtin.file:
+    path: /usr/local/lib/atomik
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Deploy App Nap script
   ansible.builtin.template:
     src: atomik-appnap.sh.j2

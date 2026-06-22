@@ -1,8 +1,26 @@
 ---
 
+- name: Detect KDE config tool
+  ansible.builtin.shell: |
+    if command -v kwriteconfig6 >/dev/null 2>&1; then
+      echo "kwriteconfig6"
+    elif command -v kwriteconfig5 >/dev/null 2>&1; then
+      echo "kwriteconfig5"
+    else
+      echo "none"
+    fi
+  become: true
+  become_user: "{{ atomik_user }}"
+  register: kwriteconfig_result
+  changed_when: false
+
+- name: Set KDE config tool
+  ansible.builtin.set_fact:
+    kde_config_tool: "{{ kwriteconfig_result.stdout }}"
+
 - name: Apply KDE settings
   ansible.builtin.shell: |
-    kwriteconfig5 --file {{ item.file }} --group {{ item.group }} --key {{ item.key }} {{ item.value | default('') }}
+    {{ kde_config_tool }} --file {{ item.file }} --group {{ item.group }} --key {{ item.key }} {{ item.value | default('') }}
   become: true
   become_user: "{{ atomik_user }}"
   loop: >-
@@ -15,21 +33,21 @@
        atomik_kde_settings.restrictions | default([]) }}
   loop_control:
     label: "{{ item.file }}/{{ item.group }}/{{ item.key }}"
-  when: item.value is defined
+  when: item.value is defined and kde_config_tool != 'none'
 
 - name: Apply KDE theme settings
   ansible.builtin.shell: |
-    kwriteconfig5 --file kdeglobals --group General --key theme {{ atomik_kde_theme[atomik_variant].theme }}
-    kwriteconfig5 --file kdeglobals --group General --key ColorScheme {{ atomik_kde_theme[atomik_variant].colorscheme }}
-    kwriteconfig5 --file kdeglobals --group General --key font {{ atomik_kde_theme[atomik_variant].font }}
-    kwriteconfig5 --file kdeglobals --group General --key fixed {{ atomik_kde_theme[atomik_variant].monospace_font }}
-    kwriteconfig5 --file kdeglobals --group Icons --key IconTheme {{ atomik_kde_theme[atomik_variant].icon_theme }}
-    kwriteconfig5 --file kdeglobals --group Icons --key cursorTheme {{ atomik_kde_theme[atomik_variant].cursor_theme }}
-    kwriteconfig5 --file ksplashrc --group KSplash --key Engine none
-    kwriteconfig5 --file ksplashrc --group KSplash --key Theme none
+    {{ kde_config_tool }} --file kdeglobals --group General --key theme {{ atomik_kde_theme[atomik_variant].theme }}
+    {{ kde_config_tool }} --file kdeglobals --group General --key ColorScheme {{ atomik_kde_theme[atomik_variant].colorscheme }}
+    {{ kde_config_tool }} --file kdeglobals --group General --key font {{ atomik_kde_theme[atomik_variant].font }}
+    {{ kde_config_tool }} --file kdeglobals --group General --key fixed {{ atomik_kde_theme[atomik_variant].monospace_font }}
+    {{ kde_config_tool }} --file kdeglobals --group Icons --key IconTheme {{ atomik_kde_theme[atomik_variant].icon_theme }}
+    {{ kde_config_tool }} --file kdeglobals --group Icons --key cursorTheme {{ atomik_kde_theme[atomik_variant].cursor_theme }}
+    {{ kde_config_tool }} --file ksplashrc --group KSplash --key Engine none
+    {{ kde_config_tool }} --file ksplashrc --group KSplash --key Theme none
   become: true
   become_user: "{{ atomik_user }}"
-  when: atomik_kde_theme[atomik_variant] | length > 0
+  when: atomik_kde_theme[atomik_variant] | length > 0 and kde_config_tool != 'none'
 
 - name: Deploy KDE panel setup script
   ansible.builtin.copy:
