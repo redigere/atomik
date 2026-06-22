@@ -1,0 +1,43 @@
+---
+
+- name: Apply firewall configuration
+  ansible.builtin.include_tasks: firewall.yml
+
+- name: Apply SSH hardening
+  ansible.builtin.include_tasks: ssh.yml
+
+- name: Apply sysctl hardening
+  ansible.builtin.include_tasks: sysctl.yml
+
+- name: Apply sudo configuration
+  ansible.builtin.include_tasks: sudo.yml
+
+- name: Apply file permissions
+  ansible.builtin.include_tasks: permissions.yml
+
+- name: Apply security limits
+  ansible.builtin.include_tasks: limits.yml
+
+- name: Apply OOMD configuration
+  ansible.builtin.include_tasks: oomd.yml
+
+- name: Apply desktop scheduler
+  ansible.builtin.include_tasks: desktop_scheduler.yml
+
+- name: Apply IO scheduler
+  ansible.builtin.include_tasks: io.yml
+
+- name: Apply tuned profile
+  ansible.builtin.include_tasks: tuned.yml
+
+- name: Apply thermald configuration
+  ansible.builtin.include_tasks: thermald.yml
+
+- name: Apply zram configuration
+  ansible.builtin.include_tasks: zram.yml
+
+- name: Apply swapfile configuration
+  ansible.builtin.include_tasks: swapfile.yml
+
+- name: Apply user shell configuration
+  ansible.builtin.include_tasks: user_shell.yml
