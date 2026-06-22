@@ -1,0 +1,23 @@
+---
+
+- name: Deploy swapfile service
+  ansible.builtin.copy:
+    content: "{{ atomik_swapfile_service }}"
+    dest: /etc/systemd/system/atomik-swapfile.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Enable swapfile service
+
+- name: Deploy swapfile unit
+  ansible.builtin.copy:
+    content: "{{ atomik_swapfile_unit }}"
+    dest: /etc/systemd/system/var-swapfile.swap
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Enable swap unit
