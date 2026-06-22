@@ -1,0 +1,10 @@
+---
+
+- name: Deploy sudoers config
+  ansible.builtin.copy:
+    content: "{{ atomik_sudo_config }}"
+    dest: /etc/sudoers.d/99-atomik
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"
