@@ -1,0 +1,13 @@
+
+{% macro flatten_dict(d, prefix='') %}
+{% for key, value in d.items() %}
+{% set full_key = prefix ~ '.' ~ key if prefix else key %}
+{% if value is mapping %}
+{{ flatten_dict(value, full_key) }}
+{% else %}
+{{ full_key }} = {{ value }}
+{% endif %}
+{% endfor %}
+{% endmacro %}
+
+{{ flatten_dict(atomik_sysctl) }}
