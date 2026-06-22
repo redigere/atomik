@@ -1,0 +1,15 @@
+
+{% set total_ram_kb = ansible_memtotal_mb * 1024 %}
+{% set min_free = [((total_ram_kb * 2 / 100) | int), 16384] | max %}
+{% set min_free = [min_free, 262144] | min %}
+{% set admin_reserve = [((total_ram_kb * 1 / 100) | int), 8192] | max %}
+{% set admin_reserve = [admin_reserve, 32768] | min %}
+{% if total_ram_kb < 2097152 %}
+{% set watermark_scale = 100 %}
+{% else %}
+{% set watermark_scale = 125 %}
+{% endif %}
+
+vm.min_free_kbytes={{ min_free }}
+vm.admin_reserve_kbytes={{ admin_reserve }}
+vm.watermark_scale_factor={{ watermark_scale }}
