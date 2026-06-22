@@ -1,0 +1,12 @@
+---
+
+- name: Apply GNOME desktop settings
+  ansible.builtin.include_tasks: gnome.yml
+  when: atomik_desktop == 'gnome'
+
+- name: Apply KDE desktop settings
+  ansible.builtin.include_tasks: kde.yml
+  when: atomik_desktop == 'kde'
+
+- name: Deploy App Nap service
+  ansible.builtin.include_tasks: appnap.yml
