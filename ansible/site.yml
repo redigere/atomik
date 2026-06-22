@@ -1,0 +1,52 @@
+---
+- name: Configure Fedora Atomic system
+  hosts: localhost
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Detect OS variant
+      ansible.builtin.shell: |
+        refspec=$(ostree admin status 2>/dev/null | grep -oP 'ostree://\K[^: ]+' || echo "")
+        if echo "$refspec" | grep -q "silverblue"; then
+          echo "silverblue"
+        elif echo "$refspec" | grep -q "kinoite"; then
+          echo "kinoite"
+        elif echo "$refspec" | grep -q "cosmic-atomic"; then
+          echo "cosmic-atomic"
+        else
+          echo "silverblue"
+        fi
+      register: variant_result
+      changed_when: false
+
+    - name: Set variant fact
+      ansible.builtin.set_fact:
+        atomik_variant: "{{ variant_result.stdout }}"
+
+    - name: Detect desktop environment
+      ansible.builtin.set_fact:
+        atomik_desktop: >-
+          {% if atomik_variant == 'kinoite' %}kde
+          {% elif atomik_variant == 'cosmic-atomic' %}cosmic
+          {% else %}gnome{% endif %}
+
+    - name: Get real user
+      ansible.builtin.set_fact:
+        atomik_user: "{{ lookup('env', 'SUDO_USER') | default(lookup('env', 'USER'), true) }}"
+
+    - name: Display variant info
+      ansible.builtin.debug:
+        msg: "Variant: {{ atomik_variant }}, Desktop: {{ atomik_desktop }}, User: {{ atomik_user }}"
+
+  roles:
+    - role: repos
+      tags: [repos]
+    - role: packages
+      tags: [packages]
+    - role: security
+      tags: [security]
+    - role: desktop
+      tags: [desktop, gnome, kde]
+    - role: devtools
+      tags: [devtools]
