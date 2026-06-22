@@ -1,0 +1,10 @@
+---
+
+- name: Deploy thermald config
+  ansible.builtin.template:
+    src: thermal-conf.xml.j2
+    dest: /etc/thermald/thermal-conf.xml
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Enable thermald
