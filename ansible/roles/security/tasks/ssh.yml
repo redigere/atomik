@@ -1,0 +1,16 @@
+---
+
+- name: Enable sshd
+  ansible.builtin.systemd:
+    name: sshd
+    state: started
+    enabled: true
+
+- name: Deploy SSH hardening config
+  ansible.builtin.copy:
+    content: "{{ atomik_ssh_config }}"
+    dest: /etc/ssh/sshd_config.d/99-atomik.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload sshd
