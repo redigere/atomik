@@ -1,0 +1,55 @@
+---
+name: CI
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible-core
+
+      - name: Install collections
+        run: ansible-galaxy collection install ansible.posix community.general
+
+      - name: Syntax check
+        run: ansible-playbook ansible/site.yml --syntax-check -i ansible/inventories/localhost/hosts.yml
+
+      - name: Lint
+        run: |
+          pip install ansible-lint
+          ansible-lint ansible/site.yml --skip-list var-naming,risky-shell-pipe,no-changed-when
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible-core
+
+      - name: Install collections
+        run: ansible-galaxy collection install ansible.posix community.general
+
+      - name: E2E tests
+        run: ansible-playbook tests/e2e.yml -i ansible/inventories/localhost/hosts.yml -c local
+        env:
+          ANSIBLE_LOG_PATH: /tmp/ansible.log
+
+      - name: Upload log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ansible-e2e-log
+          path: /tmp/ansible.log
