@@ -1,0 +1,46 @@
+---
+
+- name: Create bash.d directory
+  ansible.builtin.file:
+    path: "/var/home/{{ atomik_user }}/.bash.d"
+    state: directory
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0755"
+
+- name: Deploy JetBrains shell aliases
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.bash.d/jetbrains.sh"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      if command -v dex >/dev/null 2>&1; then
+          alias jetbrains-toolbox="dex $HOME/.local/share/applications/jetbrains-toolbox.desktop"
+          alias idea="dex $HOME/.local/share/applications/jetbrains-idea-2962247c-c234-4f4f-b69a-1ba655f7a676.desktop"
+          alias android-studio="dex $HOME/.local/share/applications/jetbrains-studio-dc863395-7115-4ff2-948e-3f642bc481dd.desktop"
+      fi
+
+- name: Check if .bashrc sources .bash.d
+  ansible.builtin.lineinfile:
+    path: "/var/home/{{ atomik_user }}/.bashrc"
+    regexp: "\\.bash\\.d"
+    state: absent
+  register: devtools_bashrc_check
+
+- name: Append .bash.d sourcing to .bashrc
+  ansible.builtin.blockinfile:
+    path: "/var/home/{{ atomik_user }}/.bashrc"
+    marker: "# {mark} ATOMIK BASH.D"
+    insertafter: EOF
+    block: |
+      if [ -d ~/.bash.d ]; then
+          for rc in ~/.bash.d/*; do
+              if [ -f "$rc" ]; then
+                  . "$rc"
+              fi
+          done
+      fi
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"

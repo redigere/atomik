@@ -1,0 +1,19 @@
+---
+
+- name: Install rustup
+  ansible.builtin.shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  become: true
+  become_user: "{{ atomik_user }}"
+  args:
+    creates: "/var/home/{{ atomik_user }}/.cargo/bin/cargo"
+
+- name: Deploy cargo shell config
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.bash.d/cargo.sh"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      if [ -f "$HOME/.cargo/env" ]; then
+          . "$HOME/.cargo/env"
+      fi

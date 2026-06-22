@@ -1,0 +1,19 @@
+---
+
+- name: Install nvm
+  ansible.builtin.shell: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+  become: true
+  become_user: "{{ atomik_user }}"
+  args:
+    creates: "/var/home/{{ atomik_user }}/.nvm/nvm.sh"
+
+- name: Deploy nvm shell config
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.bash.d/nvm.sh"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      export NVM_DIR="$HOME/.nvm"
+      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+      [ -s "$NVM_DIR/bash_completion" ] && \. "$HOME/.nvm/bash_completion"

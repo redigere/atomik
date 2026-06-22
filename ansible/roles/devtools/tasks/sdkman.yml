@@ -1,0 +1,18 @@
+---
+
+- name: Install sdkman
+  ansible.builtin.shell: curl -s "https://get.sdkman.io" | bash
+  become: true
+  become_user: "{{ atomik_user }}"
+  args:
+    creates: "/var/home/{{ atomik_user }}/.sdkman/bin/sdkman-init.sh"
+
+- name: Deploy sdkman shell config
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.bash.d/sdkman.sh"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      export SDKMAN_DIR="$HOME/.sdkman"
+      [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]] && source "$SDKMAN_DIR/bin/sdkman-init.sh"

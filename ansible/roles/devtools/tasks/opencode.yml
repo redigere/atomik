@@ -1,0 +1,17 @@
+---
+
+- name: Install opencode
+  ansible.builtin.shell: mkdir -p "$HOME/.opencode/bin" && curl -fsSL https://opencode.ai/install | sh
+  become: true
+  become_user: "{{ atomik_user }}"
+  args:
+    creates: "/var/home/{{ atomik_user }}/.opencode/bin/opencode"
+
+- name: Deploy opencode shell config
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.bash.d/opencode.sh"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      export PATH="$HOME/.opencode/bin:$PATH"
