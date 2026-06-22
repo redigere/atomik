@@ -1,0 +1,35 @@
+---
+
+- name: Deploy udev IO rules
+  ansible.builtin.copy:
+    content: "{{ atomik_io_udev_rules }}"
+    dest: /etc/udev/rules.d/99-atomik-io.rules
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload udev
+
+- name: Deploy THP config
+  ansible.builtin.copy:
+    content: "{{ atomik_thp_tmpfiles }}"
+    dest: /etc/tmpfiles.d/99-atomik-thp.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Apply mount tuning
+  ansible.builtin.shell: |
+    awk '
+    BEGIN { OFS="\t" }
+    /^[^#]/ {
+        if ($2 != "/" && $2 != "/boot" && $2 != "/boot/efi" && $3 ~ /^(ext4|xfs|btrfs|f2fs)$/) {
+            if ($4 !~ /noatime/) { $4 = $4 ",noatime" }
+            if ($4 !~ /nodiratime/) { $4 = $4 ",nodiratime" }
+        }
+        print $0
+    }
+    /^#/ || /^$/ { print $0 }
+    ' /etc/fstab > /tmp/fstab.atomik && mv /tmp/fstab.atomik /etc/fstab
+  register: mount_result
+  changed_when: false
+  failed_when: false
