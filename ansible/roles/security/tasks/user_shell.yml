@@ -1,0 +1,22 @@
+---
+
+- name: Set default shell to fish
+  ansible.builtin.user:
+    name: "{{ atomik_user }}"
+    shell: "{{ atomik_default_shell }}"
+
+- name: Create fish config directory
+  ansible.builtin.file:
+    path: "/var/home/{{ atomik_user }}/.config/fish"
+    state: directory
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0755"
+
+- name: Deploy fish config
+  ansible.builtin.copy:
+    content: "{{ atomik_fish_config }}"
+    dest: "/var/home/{{ atomik_user }}/.config/fish/config.fish"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
