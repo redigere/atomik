@@ -1,0 +1,27 @@
+---
+- name: Deploy sysctl hardening config
+  ansible.builtin.template:
+    src: sysctl.conf.j2
+    dest: /etc/sysctl.d/99-atomik-hardening.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload sysctl
+
+- name: Deploy dynamic sysctl config
+  ansible.builtin.template:
+    src: sysctl_dynamic.conf.j2
+    dest: /etc/sysctl.d/99-atomik-dynamic.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload sysctl
+
+- name: Deploy dynamic sysctl config
+  ansible.builtin.template:
+    src: sysctl_dynamic.conf.j2
+    dest: /etc/sysctl.d/99-atomik-dynamic.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload sysctl
