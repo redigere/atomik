@@ -1,0 +1,873 @@
+---
+
+atomik_variant_install:
+  silverblue:
+    - eog
+    - gnome-calculator
+    - gnome-console
+    - gnome-tweaks
+    - mission-center
+  kinoite: []
+  cosmic-atomic: []
+
+atomik_variant_remove:
+  silverblue:
+    - desktop-backgrounds-gnome
+    - evince
+    - fedora-workstation-backgrounds
+    - file-roller
+    - gnome-backgrounds
+    - gnome-calendar
+    - gnome-characters
+    - gnome-classic-session
+    - gnome-clocks
+    - gnome-contacts
+    - gnome-disk-utility
+    - gnome-flashback
+    - gnome-font-viewer
+    - gnome-initial-setup
+    - gnome-logs
+    - gnome-maps
+    - gnome-panel
+    - gnome-shell-extension-window-list
+    - gnome-tour
+    - gnome-weather
+    - malcontent-control
+    - metacity
+    - orca
+    - ptyxis
+    - rhythmbox
+    - totem
+    - yelp
+    - gnome-text-editor
+    - gnome-screenshot
+    - gnome-software
+    - gnome-shell-extension-apps-icon
+    - gnome-shell-extension-apps-menu
+    - gnome-shell-extension-common
+    - gnome-shell-extension-desktop-icons-ng
+    - gnome-shell-extension-horizontal-workspaces
+    - gnome-shell-extension-launch-new-instance
+    - gnome-shell-extension-places-icon
+    - gnome-shell-extension-system-monitor
+    - gnome-shell-extension-user-theme
+    - gnome-shell-extensions
+    - gnome-multi-writer
+    - gnome-music
+    - gnome-photos
+    - gnome-terminal
+    - gnome-connections
+    - gnome-disks
+    - gnome-control-center
+    - gnome-bluetooth
+    - gnome-usage
+    - baobab
+    - cheese
+    - dconf-editor
+    - four-in-a-row
+    - gnome-chess
+    - gnome-klotski
+    - gnome-mahjongg
+    - gnome-mines
+    - gnome-nibbles
+    - gnome-robots
+    - gnome-sudoku
+    - gnome-taquin
+    - gnome-tetravex
+    - iagno
+    - lightsoff
+    - swell-foop
+    - tali
+    - hitori
+    - five-or-more
+    - quadrapassel
+    - aisleriot
+    - atomix
+    - glade
+    - nemiver
+    - gnome-builder
+    - gnome-code-assistance
+    - gnome-devel-docs
+    - accerciser
+    - alacarte
+    - gnome-documents
+    - gnome-menus
+    - gnome-nettool
+    - gnome-power-manager
+    - gnome-screensaver
+    - gnome-search-tool
+    - gnome-system-log
+    - gnome-system-monitor
+    - gnome-themes
+    - gnome-themes-extra
+    - gnome-video-effects
+    - ghex
+    - gbrainy
+    - vinagre
+    - vinetheme
+    - seahorse
+    - totem-plugin-visualization
+    - totem-video-thumbnailer
+    - gnome-boxes
+    - gnome-netstatus
+    - gnome-pie
+    - gnome-pomodoro
+    - gnome-sound-recorder
+    - gnome-split
+    - gnome-subtitles
+    - gnome-symbols
+    - gnome-todo
+    - gnome-twitch
+    - gnome-web
+    - gnome-shell-extension-dash-to-dock
+    - gnome-shell-extension-dash-to-panel
+    - gnome-shell-extension-topicons
+    - gnome-shell-extension-workspaces-to-dock
+    - gnome-shell-extension-no-hot-corners
+    - gnome-shell-extension-just-perfection
+    - gnome-shell-extension-arc-menu
+    - gnome-shell-extension-ding
+    - gnome-shell-extension-material-shell
+    - gnome-shell-extension-pop-shell
+    - gnome-shell-extension-tiling-assistant
+    - gnome-shell-extension-vitals
+    - gnome-shell-extension-cpupower
+    - gnome-shell-extension-gestureImprovements
+    - gnome-classic-session-wayland
+    - gnome-classic-session-x11
+    - gnome-session-wayland
+    - gnome-session-x11
+    - gnome-session
+    - gnome-shell
+    - gnome-terminal-nautilus
+    - gnome-viewport
+    - gnome-volume-control
+    - gnome-online-miners
+    - gnome-online-accounts
+    - gnome-remote-desktop
+    - gnome-settings-daemon
+    - gnome-shell-extension-gsconnect
+    - gnome-software-editor
+    - gnome-shell-extension-system-monitor-applet
+    - gnome-shell-extension-unite
+    - gnome-shell-extension-gtile
+    - gnome-shell-extension-calc
+    - gnome-shell-extension-clipboard-indicator
+    - gnome-shell-extension-sound-output-device-chooser
+    - gnome-shell-extension-proxy-switcher
+    - gnome-shell-extension-weather
+    - gnome-shell-extension-openweather
+    - gnome-shell-extension-caffeine
+    - gnome-shell-extension-night-theme-switcher
+    - gnome-shell-extension-emoji-selector
+    - gnome-shell-extension-forge
+    - gnome-shell-extension-removable-drive-menu
+    - gnome-shell-extension-extensions
+    - gnome-shell-extension-places-status-indicator
+    - gnome-shell-extension-workspace-indicator
+    - gnome-shell-extension-auto-move-windows
+    - gnome-shell-extension-drive-menu
+    - gnome-shell-extension-native-window-placement
+    - gnome-shell-extension-screenshot-window-sizer
+    - gnome-shell-extension-status-menu
+    - gnome-shell-extension-updater
+    - gnome-color-manager
+  kinoite:
+    - akonadi
+    - akonadi-calendar
+    - akonadi-calendar-tools
+    - akonadi-import-wizard
+    - akonadi-mime
+    - akonadi-notes
+    - akonadi-search
+    - akonadiserver
+    - artikulate
+    - blinken
+    - cantor
+    - desktop-backgrounds-gnome
+    - dragon
+    - elisa
+    - fedora-workstation-backgrounds
+    - filelight
+    - gnome-backgrounds
+    - gwenview
+    - juk
+    - k3b
+    - kaddressbook
+    - kalarm
+    - kalgebra
+    - kalzium
+    - kamoso
+    - kanagram
+    - kate
+    - kblackbox
+    - kblocks
+    - kbounce
+    - kbruch
+    - kdenlive
+    - kde-connect
+    - kde-connect-libs
+    - kdeconnectd
+    - kdebugsettings
+    - kdepim-addons
+    - kdepim-runtime
+    - kdevelop
+    - kdevelop-pg-qt
+    - kfind
+    - kfourinline
+    - kgeography
+    - kgoldrunner
+    - khangman
+    - khelpcenter
+    - kig
+    - kigo
+    - killbots
+    - kinfocenter
+    - kiriki
+    - kiten
+    - kjournald
+    - kjumpingcube
+    - klettres
+    - klickety
+    - klines
+    - kmail
+    - kmail-account-wizard
+    - kmines
+    - kmix
+    - kmplayer
+    - kmplot
+    - knetwalk
+    - knode
+    - knotes
+    - kolf
+    - kollision
+    - konquest
+    - kontact
+    - korganizer
+    - kpat
+    - krdc
+    - kreversi
+    - krfb
+    - krfb-libs
+    - krusader
+    - ksame
+    - kscd
+    - kshisen
+    - ksirk
+    - ksquares
+    - kstars
+    - ksudoku
+    - ksysguard
+    - ksystemlog
+    - ktimer
+    - ktnef
+    - ktouch
+    - ktron
+    - kturtle
+    - kubrick
+    - kuser
+    - kwave
+    - kwordquiz
+    - lskat
+    - marble
+    - okular
+    - palapeli
+    - partitionmanager
+    - picmi
+    - pim-data-exporter
+    - pim-sieve-editor
+    - pim-storage-service-manager
+    - plasma-disks
+    - plasma-drkonqi
+    - plasma-welcome
+    - print-manager
+    - rocs
+    - step
+    - umbrella
+    - kde-spectacle
+    - kde-gtk-config
+    - khotkeys
+    - kmenuedit
+    - krunner
+    - kscreen
+    - kscreen-doctor
+    - ksshaskpass
+    - ksystemstats
+    - kwin-x11
+    - oxygen-sounds
+    - sddm-kcm
+    - plasma-nano
+    - plasma-mobile
+    - plasma-browser-integration
+    - plasma-discover-offline-updates
+    - plasma-vault
+    - plasma-workspace-wallpapers
+    - plasma5-integration
+    - colord-kde
+    - drkonqi
+    - kde-cli-tools
+    - kio-extras
+    - packagekit
+    - packagekit-command-line
+    - xdg-desktop-portal-kde
+  cosmic-atomic:
+    - adwaita-qt5
+    - adwaita-qt6
+    - ark
+    - fedora-chromium-config
+    - kio-extras
+    - kio-fuse
+    - kvantum
+    - qgnomeplatform-qt5
+    - qgnomeplatform-qt6
+    - qt5ct
+    - qt6ct
+    - gnome-classic-session
+    - gnome-flashback
+    - gnome-panel
+    - gnome-shell-extension-window-list
+    - metacity
+    - gnome-backgrounds
+    - desktop-backgrounds-gnome
+    - fedora-workstation-backgrounds
+    - evince
+    - file-roller
+    - gnome-calendar
+    - gnome-characters
+    - gnome-clocks
+    - gnome-contacts
+    - gnome-disk-utility
+    - gnome-font-viewer
+    - gnome-logs
+    - gnome-maps
+    - gnome-weather
+    - gnome-tour
+    - gnome-initial-setup
+    - malcontent-control
+    - orca
+    - ptyxis
+    - rhythmbox
+    - totem
+    - yelp
+    - gnome-text-editor
+    - gnome-screenshot
+    - gnome-software
+    - gnome-shell-extensions
+    - gnome-music
+    - gnome-photos
+    - gnome-terminal
+    - gnome-connections
+    - gnome-disks
+    - gnome-control-center
+    - gnome-bluetooth
+    - gnome-usage
+    - baobab
+    - cheese
+    - dconf-editor
+    - seahorse
+    - gnome-boxes
+    - gnome-builder
+    - glade
+    - nemiver
+    - gnome-system-monitor
+    - gnome-tweaks
+    - gnome-console
+    - kate
+    - kdevelop
+    - konsole
+    - dolphin
+    - okular
+    - gwenview
+    - spectacle
+    - kwrite
+    - kde-connect
+    - kdeconnectd
+    - kinfocenter
+    - khelpcenter
+    - plasma-disks
+    - plasma-drkonqi
+    - plasma-welcome
+    - print-manager
+    - sddm
+    - sddm-kcm
+    - bluedevil
+    - powerdevil
+    - khotkeys
+    - kscreen
+    - krunner
+    - kwin
+    - plasma-desktop
+    - plasma-workspace
+    - plasma-integration
+    - plasma-pa
+    - plasma-systemmonitor
+    - plasma-nano
+    - plasma-mobile
+    - plasma5-integration
+    - xdg-desktop-portal-kde
+    - colord-kde
+    - drkonqi
+    - kde-cli-tools
+    - kde-gtk-config
+    - kdeplasma-addons
+    - kio-fuse
+    - oxygen-sounds
+    - packagekit
+    - packagekit-command-line
+    - kamoso
+    - elisa
+    - juk
+    - kdenlive
+    - dragon
+    - kmix
+    - kmplayer
+    - kscd
+    - kmplot
+    - kstars
+    - marble
+    - cantor
+    - artikulate
+    - blinken
+    - kalgebra
+    - kalzium
+    - kanagram
+    - kblackbox
+    - kblocks
+    - kbounce
+    - kbruch
+    - kfourinline
+    - kgeography
+    - kgoldrunner
+    - khangman
+    - kig
+    - kigo
+    - killbots
+    - kiriki
+    - kiten
+    - kjumpingcube
+    - klettres
+    - klickety
+    - klines
+    - kmines
+    - knetwalk
+    - kolf
+    - kollision
+    - konquest
+    - kpat
+    - kreversi
+    - ksame
+    - kshisen
+    - ksirk
+    - ksquares
+    - ksudoku
+    - lskat
+    - palapeli
+    - picmi
+    - rocs
+    - step
+    - umbrella
+    - akonadi
+    - akonadi-calendar
+    - akonadi-calendar-tools
+    - akonadi-import-wizard
+    - akonadi-mime
+    - akonadi-notes
+    - akonadi-search
+    - akonadiserver
+    - kaddressbook
+    - kalarm
+    - kmail
+    - kmail-account-wizard
+    - knotes
+    - kontact
+    - korganizer
+    - pim-data-exporter
+    - pim-sieve-editor
+    - pim-storage-service-manager
+
+atomik_rpm_install:
+  - firewalld
+  - powertop
+  - zram-generator
+  - brave-browser
+  - host-spawn
+  - fish
+  - util-linux-user
+  - fontawesome-fonts-all
+  - flatpak
+  - flatpak-selinux
+  - flatpak-session-helper
+  - tuned
+  - tuned-utils
+  - thermald
+
+atomik_rpm_remove:
+  - firefox
+  - firefox-langpacks
+  - google-noto-sans-cjk-vf-fonts
+  - google-noto-color-emoji-fonts
+  - google-noto-emoji-fonts
+  - default-fonts-core-emoji
+  - libreoffice-core
+  - libreoffice-draw
+  - libreoffice-impress
+  - libreoffice-calc
+  - libreoffice-writer
+  - libreoffice-math
+  - libreoffice-base
+  - libreoffice-opensymbol-fonts
+  - libreoffice-pdfimport
+  - libreoffice-style-colibre
+  - libreoffice-style-sifr
+  - libreoffice-filters
+  - libreoffice-help-en-US
+  - libreoffice-data-en-US
+  - libreoffice-gtk3
+  - libreoffice-icon-theme
+  - libsane-hpaio
+
+atomik_repositories:
+  brave-browser:
+    content: |
+      [brave-browser]
+      name=Brave Browser
+      baseurl=https://brave-browser-rpm-release.s3.brave.com/$basearch
+      enabled=1
+      gpgcheck=1
+      gpgkey=https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
+
+atomik_flatpak_remote: flathub
+atomik_flatpak_remote_url: "https://dl.flathub.org/repo/flathub.flatpakrepo"
+atomik_flatpak_verified:
+  - com.discordapp.Discord
+  - com.slack.Slack
+  - com.jetbrains.IntelliJ-IDEA-Community
+  - com.google.AndroidStudio
+atomik_flatpak_overrides:
+  com.jetbrains.IntelliJ-IDEA-Community:
+    - --filesystem=home
+  com.google.AndroidStudio:
+    - --filesystem=home
+
+atomik_firewall_services:
+  - ssh
+  - dhcpv6-client
+
+atomik_ssh_config: |
+  PermitRootLogin no
+  PasswordAuthentication no
+  PubkeyAuthentication yes
+  X11Forwarding no
+  ClientAliveInterval 300
+  Compression yes
+  TCPKeepAlive yes
+  UseDNS no
+  AllowUsers @wheel
+
+atomik_sysctl:
+  fs:
+    file-max: 9223372036854775807
+    protected_fifos: 2
+    protected_hardlinks: 1
+    protected_regular: 2
+    protected_symlinks: 1
+    suid_dumpable: 0
+  kernel:
+    core_uses_pid: 1
+    dmesg_restrict: 1
+    kptr_restrict: 2
+    numa_balancing: 0
+    panic: 10
+    pid_max: 4194304
+    printk: "3 3 3 3"
+    sched_autogroup_enabled: 0
+    sysrq: 0
+    threads-max: 1048576
+    timer_migration: 0
+    unprivileged_bpf_disabled: 1
+  net:
+    ipv4:
+      conf:
+        all:
+          accept_redirects: 0
+          accept_source_route: 0
+          arp_announce: 2
+          arp_ignore: 1
+          send_redirects: 0
+        default:
+          accept_redirects: 0
+          accept_source_route: 0
+          send_redirects: 0
+      icmp_echo_ignore_broadcasts: 1
+      ip_forward: 0
+      ping_group_range: "0 2147483647"
+      tcp_fastopen: 3
+      tcp_rfc1337: 1
+      tcp_syncookies: 1
+      tcp_timestamps: 0
+    ipv6:
+      conf:
+        all:
+          accept_redirects: 0
+          accept_source_route: 0
+          disable_ipv6: 0
+        default:
+          accept_redirects: 0
+          accept_source_route: 0
+          disable_ipv6: 0
+  vm:
+    compaction_proactiveness: 0
+    dirty_background_ratio: 5
+    dirty_expire_centisecs: 3000
+    dirty_ratio: 10
+    dirty_writeback_centisecs: 1500
+    max_map_count: 2147483642
+    overcommit_memory: 1
+    overcommit_ratio: 50
+    page_lock_unfairness: 1
+    panic_on_oom: 0
+    swappiness: 60
+    vfs_cache_pressure: 50
+    watermark_boost_factor: 0
+    zone_reclaim_mode: 0
+
+atomik_limits:
+  hard:
+    memlock: 8388608
+    nofile: 2097152
+    nproc: 524288
+  soft:
+    memlock: 8388608
+    nofile: 1048576
+    nproc: 262144
+
+atomik_sudo_config: |
+  Defaults timestamp_timeout=5
+  Defaults lecture=never
+  Defaults passwd_timeout=0
+  Defaults use_pty
+  Defaults logfile="/var/log/sudo.log"
+
+atomik_permissions:
+  /boot: "0755"
+  /boot/loader: "0755"
+  /etc/group: "0644"
+  /etc/gshadow: "0000"
+  /etc/passwd: "0644"
+  /etc/shadow: "0000"
+  /root: "0700"
+
+atomik_oomd_config: |
+  [OOM]
+  SwapUsedLimit=70%
+  DefaultMemoryPressureLimit=40%
+  DefaultMemoryPressureDurationSec=5s
+
+atomik_oomd_user_slice: |
+  [Service]
+  ManagedOOMMemoryPressure=kill
+  ManagedOOMSwap=kill
+
+atomik_oomd_protected_config: |
+  [Service]
+  ManagedOOMMemoryPressure=kill
+  ManagedOOMSwap=kill
+  OOMScoreAdjust=-500
+
+atomik_oomd_protected_services:
+  silverblue:
+    - gdm
+    - gnome-session
+    - gnome-session-wayland
+    - gnome-session-x11
+    - gnome-shell
+    - pipewire
+    - pipewire-pulse
+    - wireplumber
+  kinoite:
+    - kwin
+    - pipewire
+    - pipewire-pulse
+    - plasma-shell
+    - startplasma
+    - wireplumber
+  cosmic-atomic:
+    - cosmic-comp
+    - pipewire
+    - pipewire-pulse
+    - wireplumber
+
+atomik_desktop_scheduler_services:
+  silverblue:
+    - gnome-shell
+  kinoite:
+    - kwin
+  cosmic-atomic:
+    - cosmic-comp
+
+atomik_zram_config: |
+  [zram0]
+  zram-size = ram / 2
+  compression-algorithm = zstd
+  swap-priority = 100
+  fs-type = swap
+
+atomik_swapfile_service: |
+  [Unit]
+  Description=Atomik Swapfile Creator
+  ConditionPathExists=!/var/swapfile
+
+  [Service]
+  Type=oneshot
+  ExecStart=/sbin/btrfs filesystem mkswapfile --size 4G /var/swapfile
+  RemainAfterExit=yes
+
+  [Install]
+  WantedBy=multi-user.target
+
+atomik_swapfile_unit: |
+  [Unit]
+  Description=Atomik Disk Swapfile
+  Requires=atomik-swapfile.service
+  After=atomik-swapfile.service
+
+  [Swap]
+  What=/var/swapfile
+  Priority=10
+
+  [Install]
+  WantedBy=swap.target
+
+atomik_io_udev_rules: |
+  ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="kyber"
+  ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{queue/scheduler}="bfq"
+
+atomik_thp_tmpfiles: "w /sys/kernel/mm/transparent_hugepage/defrag - - - - defer"
+
+atomik_desktop_scheduler_config: |
+  [Service]
+  OOMScoreAdjust=-500
+  IOSchedulingClass=best-effort
+  IOSchedulingPriority=0
+  CPUSchedulingPolicy=rr
+  CPUSchedulingPriority=1
+
+atomik_default_shell: /usr/bin/fish
+atomik_fish_config: |
+  if status is-interactive
+      set -g fish_greeting ""
+      alias ll="ls -l"
+      alias la="ls -la"
+      alias update="rpm-ostree upgrade"
+  end
+
+atomik_gnome_dconf:
+  - path: /org/gnome/desktop/interface/enable-animations
+    value: "false"
+  - path: /org/gnome/desktop/privacy/send-technical-reports
+    value: "false"
+  - path: /org/gnome/desktop/privacy/report-technical-problems
+    value: "false"
+  - path: /org/gnome/desktop/search-providers/disable-external
+    value: "true"
+  - path: /org/gnome/desktop/lockdown/disable-command-line
+    value: "false"
+
+atomik_kde_settings:
+  animations:
+    - file: kdeglobals
+      group: KDE
+      key: AnimationDurationFactor
+      value: "0"
+    - file: kwinrc
+      group: kwin
+      key: Opacity
+      value: "0"
+    - file: kwinrc
+      group: Blur
+      key: Blur
+      value: "false"
+    - file: kwinrc
+      group: Compositing
+      key: OpenGLIsUnsafe
+      value: "true"
+  baloo:
+    - file: baloofilerc
+      group: Basic Settings
+      key: Indexing-Enabled
+      value: "false"
+  power:
+    - file: powermanagementprofilesrc
+      group: AC
+      key: acHandleButtonEvent
+      value: "1"
+    - file: powermanagementprofilesrc
+      group: Battery
+      key: batteryHandleButtonEvent
+      value: "1"
+    - file: powermanagementprofilesrc
+      group: AC
+      key: idleTimeout
+      value: "300000"
+    - file: powermanagementprofilesrc
+      group: AC
+      key: suspendThenHibernate
+      value: "false"
+  taskbar:
+    - file: plasma-org.kde.plasma.desktop-appletsrc
+      group: PlasmaViews
+      key: layoutPlugins
+      value: org.kde.plasma.icontasks
+    - file: plasma-org.kde.plasma.desktop-appletsrc
+      group: ConfigDialog
+      key: fillWidth
+      value: "true"
+  telemetry:
+    - file: kuserfeedbackrc
+      group: UserFeedback
+      key: TelemetryLevel
+      value: "0"
+    - file: kdeglobals
+      group: KUserFeedback
+      key: TelemetryLevel
+      value: "0"
+  wallet:
+    - file: kwalletrc
+      group: Wallet
+      key: Enabled
+      value: "false"
+    - file: kwalletrc
+      group: Wallet
+      key: First Use
+      value: "false"
+  restrictions:
+    - file: kdeglobals
+      group: KDE Action Restrictions
+      key: plasma/plasmashell/unlocked
+      value: "false"
+
+atomik_kde_theme:
+  silverblue: {}
+  kinoite:
+    theme: Breeze Dark
+    colorscheme: BreezeDark
+    font: Cantarell 11
+    monospace_font: Noto Sans Mono 11
+    icon_theme: Breeze
+    cursor_theme: Breeze
+  cosmic-atomic: {}
+
+atomik_kde_config_files:
+  - kdeglobals
+  - kwinrc
+  - plasma-org.kde.plasma.desktop-appletsrc
+  - kwalletrc
+  - powermanagementprofilesrc
+
+atomik_appnap_memory_high: 105
+atomik_appnap_interval: 1
+
+atomik_ego_extensions:
+  - dash-to-dock@micxgx.gmail.com
+atomik_ego_base_url: "https://extensions.gnome.org"
+atomik_ego_install_dir: "/home/{{ atomik_user }}/.local/share/gnome-shell/extensions"
