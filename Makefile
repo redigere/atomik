@@ -1,5 +1,5 @@
 .PHONY: all lint check test install-deps apply clean help
-.PHONY: apply-repos apply-packages apply-security apply-desktop apply-devtools
+.PHONY: apply-repos apply-packages apply-security apply-desktop apply-devtools apply-extra apply-extra-kde apply-extra-gnome apply-extra-flatpak
 
 ANSIBLE_PLAYBOOK = ansible-playbook ansible/site.yml -i ansible/inventories/localhost/hosts.yml
 E2E_PLAYBOOK = ansible-playbook tests/e2e.yml -i ansible/inventories/localhost/hosts.yml -c local
@@ -14,12 +14,28 @@ help:
 	@echo "  make test             Run e2e tests"
 	@echo "  make apply            Apply full configuration"
 	@echo "  make apply-<role>     Apply single role ($(ROLES))"
+	@echo "  make apply-extra      Apply all extra configs"
+	@echo "  make apply-extra-kde  Apply KDE panels/theme"
+	@echo "  make apply-extra-gnome Apply GNOME theme/settings"
+	@echo "  make apply-extra-flatpak Install non-system Flatpak apps"
 	@echo "  make install-deps     Install ansible-core + collections"
 	@echo "  make clean            Remove ansible retry files"
+
+apply-extra: apply-extra-kde apply-extra-gnome
+
+apply-extra-kde:
+	bash extra/kde/apply.sh
+
+apply-extra-gnome:
+	bash extra/gnome/apply.sh
+
+apply-extra-flatpak:
+	pkexec ansible-playbook extra/flatpak/site.yml -i ansible/inventories/localhost/hosts.yml
 
 lint:
 	cd ansible && ansible-playbook --syntax-check site.yml
 	cd ansible && ansible-playbook --syntax-check ../tests/e2e.yml
+	cd ansible && ansible-playbook --syntax-check ../extra/flatpak/site.yml
 
 test:
 	$(E2E_PLAYBOOK)

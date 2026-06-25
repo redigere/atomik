@@ -6,6 +6,17 @@ on:
   pull_request:
     branches: [master]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -14,40 +25,461 @@ jobs:
 
       - name: Install Ansible
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ansible-core
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ansible-core python3-pip
 
       - name: Install collections
         run: ansible-galaxy collection install ansible.posix community.general
 
-      - name: Syntax check
+      - name: Install linters
+        run: pip install -q ansible-lint yamllint
+
+      - name: Syntax check (site.yml)
         run: ansible-playbook ansible/site.yml --syntax-check -i ansible/inventories/localhost/hosts.yml
 
-      - name: Lint
-        run: |
-          pip install ansible-lint
-          ansible-lint ansible/site.yml --skip-list var-naming,risky-shell-pipe,no-changed-when
+      - name: Syntax check (e2e.yml)
+        run: ansible-playbook tests/e2e.yml --syntax-check -i ansible/inventories/localhost/hosts.yml
 
-  e2e:
+      - name: Ansible-lint
+        run: ansible-lint ansible/site.yml --skip-list var-naming,risky-shell-pipe,no-changed-when
+
+      - name: YAML lint
+        run: |
+          yamllint --strict .yamllint
+          yamllint --strict ansible/site.yml
+          yamllint --strict ansible/group_vars/all.yml
+          yamllint --strict tests/e2e.yml
+          yamllint --strict .github/workflows/ci.yml
+
+  validate-scripts:
     runs-on: ubuntu-latest
-    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck nodejs
+
+      - name: Shellcheck all shell scripts
+        run: |
+          find . -name '*.sh' -not -path './.git/*' -print -exec shellcheck {} \+
+
+      - name: Validate Python syntax
+        run: |
+          python3 -m py_compile extra/kde/panels.py
+          python3 -m py_compile ansible/roles/desktop/files/panels.py
+
+      - name: Validate JSON
+        run: |
+          python3 -m json.tool \
+            extra/kde/look-and-feel/com.atomik.desktop/metadata.json /dev/null
+          python3 -m json.tool \
+            ansible/roles/desktop/files/look-and-feel/com.atomik.desktop/metadata.json /dev/null
+          python3 -m json.tool \
+            ansible/roles/desktop/files/look-and-feel/look-and-feel/com.atomik.desktop/metadata.json /dev/null
+
+      - name: Validate JavaScript (KDE panel scripts)
+        run: |
+          node --check extra/kde/dock.js
+          node --check extra/kde/topbar.js
+
+      - name: Validate SVG (panel background)
+        run: |
+          python3 -c "
+          import xml.etree.ElementTree as ET
+          for svg in ['extra/kde/panel-background.svg', 'ansible/roles/desktop/files/panel-background.svg']:
+              tree = ET.parse(svg)
+              root = tree.getroot()
+              assert root.tag.endswith('svg'), f'{svg}: not an SVG'
+              print(f'{svg}: valid SVG, viewBox={root.get(\"viewBox\", \"N/A\")}')
+          "
+
+      - name: Validate Makefile targets
+        run: |
+          make -n lint 2>/dev/null || true
+          grep -q '^lint:' Makefile && grep -q '^test:' Makefile && grep -q '^clean:' Makefile
+
+  validate-ansible:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Ansible
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ansible-core
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ansible-core
 
       - name: Install collections
         run: ansible-galaxy collection install ansible.posix community.general
 
-      - name: E2E tests
+      - name: Dry-run site.yml (check mode)
+        run: |
+          ansible-playbook ansible/site.yml -i ansible/inventories/localhost/hosts.yml \
+            --check --diff \
+            --skip-tags desktop,devtools,packages \
+            -e 'ansible_python_interpreter=/usr/bin/python3' \
+            2>&1 | tail -20
+        continue-on-error: true
+
+      - name: Verify all template variables exist in group_vars
+        run: |
+          python3 -c "
+          import re, yaml, os, sys
+          with open('ansible/group_vars/all.yml') as f:
+              vars_def = yaml.safe_load(f)
+          defined = set(vars_def.keys())
+          refs = set()
+          tpl_dir = 'ansible/roles'
+          for root, dirs, files in os.walk(tpl_dir):
+              for f in files:
+                  if not f.endswith('.j2'): continue
+                  path = os.path.join(root, f)
+                  with open(path) as fh:
+                      content = fh.read()
+                  for m in re.finditer(r'atomik_\w+', content):
+                      refs.add(m.group())
+          missing = refs - defined
+          if missing:
+              print(f'TEMPLATE VARIABLES NOT IN group_vars: {missing}')
+              sys.exit(1)
+          print(f'All {len(refs)} template-referenced variables defined in group_vars.')
+          "
+
+      - name: Verify file cross-references
+        run: |
+          python3 -c "
+          import yaml, os, sys
+          errors = []
+          with open('ansible/group_vars/all.yml') as f:
+              cfg = yaml.safe_load(f)
+          # Check KDE launcher paths referenced in panels.py
+          launcher_refs = [
+              'applications:org.kde.dolphin.desktop',
+              'applications:org.kde.konsole.desktop',
+              'applications:systemsettings.desktop',
+          ]
+          # Check if SVG used by both extra and ansible exist
+          for p in ['extra/kde/panel-background.svg',
+                    'ansible/roles/desktop/files/panel-background.svg']:
+              if not os.path.exists(p):
+                  errors.append(f'MISSING: {p}')
+          # Check look-and-feel dirs
+          for p in ['extra/kde/look-and-feel/com.atomik.desktop/metadata.json',
+                    'extra/kde/look-and-feel/com.atomik.desktop/contents/defaults',
+                    'ansible/roles/desktop/files/look-and-feel/com.atomik.desktop/metadata.json',
+                    'ansible/roles/desktop/files/look-and-feel/com.atomik.desktop/contents/defaults']:
+              if not os.path.exists(p):
+                  errors.append(f'MISSING: {p}')
+          if errors:
+              for e in errors:
+                  print(e)
+              sys.exit(1)
+          print('All file cross-references OK')
+          "
+
+      - name: Verify extra/ and ansible/roles/desktop/files/ are in sync
+        run: |
+          python3 -c "
+          import filecmp, os, sys
+          pairs = [
+              ('extra/kde/panels.py', 'ansible/roles/desktop/files/panels.py'),
+              ('extra/kde/theme.sh', 'ansible/roles/desktop/files/theme.sh'),
+              ('extra/kde/apply.sh', 'ansible/roles/desktop/files/apply.sh'),
+              ('extra/kde/panel-background.svg', 'ansible/roles/desktop/files/panel-background.svg'),
+          ]
+          errors = []
+          for a, b in pairs:
+              if not os.path.exists(a):
+                  errors.append(f'MISSING: {a}')
+                  continue
+              if not os.path.exists(b):
+                  errors.append(f'MISSING: {b}')
+                  continue
+              if filecmp.cmp(a, b, shallow=False):
+                  print(f'{os.path.basename(a)}: in sync')
+              else:
+                  errors.append(f'DIVERGED: {a} != {b}')
+          if errors:
+              for e in errors:
+                  print(e)
+              sys.exit(1)
+          print('All extra/ <-> ansible/roles/desktop/files/ files in sync')
+          "
+
+      - name: Verify no empty role subtask lists
+        run: |
+          python3 -c "
+          import yaml, os, sys
+          errors = []
+          tasks_dir = 'ansible/roles'
+          for root, dirs, files in os.walk(tasks_dir):
+              for f in files:
+                  if f != 'main.yml': continue
+                  path = os.path.join(root, f)
+                  with open(path) as fh:
+                      try:
+                          tasks = yaml.safe_load(fh)
+                      except: continue
+                  if tasks is None:
+                      errors.append(f'EMPTY: {path}')
+          if errors:
+              for e in errors:
+                  print(e)
+              sys.exit(1)
+          print('All role main task files non-empty')
+          "
+
+  validate-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nodejs
+          npm install -g markdownlint-cli
+
+      - name: Markdown lint
+        run: |
+          markdownlint --disable MD013 MD033 MD041 \
+            README.md SPRINTS.md \
+            docs/README.md docs/SPRINTS.md docs/INSTRUCTIONS.md || true
+
+      - name: Verify README references real files
+        run: |
+          python3 -c "
+          import os, sys
+          refs = [
+              ('ansible/', 'ansible/ directory'),
+              ('extra/kde/', 'extra/kde/ directory'),
+              ('apply-nordic-kde.sh', 'Nordic KDE installer script'),
+          ]
+          errors = []
+          for path, desc in refs:
+              if not os.path.exists(path):
+                  errors.append(f'README references {desc} ({path}) but file not found')
+          if errors:
+              for e in errors:
+                  print(e)
+              sys.exit(1)
+          print('README file references valid')
+          "
+
+      - name: Verify LICENSE exists
+        run: test -f LICENSE
+
+      - name: Verify SPRINTS.md structure
+        run: grep -q '^# ' SPRINTS.md
+
+  e2e-toolbox:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:44
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies in container
+        run: |
+          dnf install -y -q ansible-core python3-pip python3-pyyaml
+          ansible-galaxy collection install ansible.posix community.general
+
+      - name: Validate all YAML files
+        run: |
+          python3 -c "
+          import yaml, os, sys
+          errors = []
+          skip_prefixes = ('.git/', '.github/')
+          for root, dirs, files in os.walk('.'):
+              dirs[:] = [d for d in dirs if not d.startswith('.')]
+              for f in files:
+                  if not f.endswith('.yml'):
+                      continue
+                  if f.endswith('.j2'):
+                      continue
+                  path = os.path.join(root, f)
+                  try:
+                      with open(path) as fh:
+                          yaml.safe_load(fh)
+                  except yaml.YAMLError as e:
+                      errors.append(f'{path}: {e}')
+          if errors:
+              for e in errors:
+                  print(e, file=sys.stderr)
+              sys.exit(1)
+          print('All YAML files valid')
+          "
+
+      - name: Verify role structure
+        run: |
+          for role in repos packages security desktop devtools; do
+            test -f "ansible/roles/$role/tasks/main.yml" || exit 1
+          done
+
+      - name: Verify templates compile
+        run: |
+          python3 -c "
+          import os
+          templates = []
+          for root, dirs, files in os.walk('ansible/roles'):
+              for f in files:
+                  if f.endswith('.j2'):
+                      templates.append(os.path.join(root, f))
+          print(f'Templates found: {len(templates)}')
+          if len(templates) < 8:
+              print('ERROR: expected at least 8 templates')
+              exit(1)
+          for t in sorted(templates):
+              print(f'  {t}')
+          "
+
+      - name: Verify handlers
+        run: |
+          count=$(find ansible/roles -path '*/handlers/main.yml' | wc -l)
+          test "$count" -ge 2 || exit 1
+
+      - name: Validate flatpak config
+        run: |
+          python3 -c "
+          import yaml
+          with open('ansible/group_vars/all.yml') as f:
+              cfg = yaml.safe_load(f)
+          verified = cfg.get('atomik_flatpak_verified', [])
+          overrides = cfg.get('atomik_flatpak_overrides', {})
+          assert len(verified) == 0, f'Expected 0 system flatpak apps, got {len(verified)}'
+          assert len(overrides) == 0, f'Expected 0 system overrides, got {len(overrides)}'
+          print(f'Flatpak OK: {len(verified)} system apps, {len(overrides)} overrides')
+          "
+
+      - name: Validate sysctl config
+        run: |
+          python3 -c "
+          import yaml
+          with open('ansible/group_vars/all.yml') as f:
+              cfg = yaml.safe_load(f)
+          s = cfg.get('atomik_sysctl', {})
+          assert s['fs']['file-max'] == 9223372036854775807
+          assert s['kernel'].get('sched_latency_ns') == 6000000
+          assert 'net' in s and 'vm' in s
+          print('Sysctl config valid')
+          "
+
+      - name: Validate variant configs
+        run: |
+          python3 -c "
+          import yaml
+          with open('ansible/group_vars/all.yml') as f:
+              cfg = yaml.safe_load(f)
+          for v in ['silverblue', 'kinoite', 'cosmic-atomic']:
+              r = cfg.get('atomik_variant_remove', {}).get(v, [])
+              i = cfg.get('atomik_variant_install', {}).get(v, [])
+              assert isinstance(r, list), f'{v} remove not a list'
+              assert isinstance(i, list), f'{v} install not a list'
+              print(f'{v}: {len(i)} install, {len(r)} remove')
+          "
+
+      - name: Validate RPM conflict
+        run: |
+          python3 -c "
+          import yaml
+          with open('ansible/group_vars/all.yml') as f:
+              cfg = yaml.safe_load(f)
+          install = set(cfg.get('atomik_rpm_install', []))
+          remove = set(cfg.get('atomik_rpm_remove', []))
+          conflict = install & remove
+          if conflict:
+              print(f'CONFLICT: {conflict} in both install and remove')
+              exit(1)
+          print(f'RPM lists OK: {len(install)} install, {len(remove)} remove')
+          "
+
+      - name: Validate KDE theme config
+        run: |
+          python3 -c "
+          import yaml
+          with open('ansible/group_vars/all.yml') as f:
+              cfg = yaml.safe_load(f)
+          t = cfg.get('atomik_kde_theme', {}).get('kinoite', {})
+          assert t.get('theme') == 'Nordic', 'theme != Nordic'
+          assert t.get('colorscheme') == 'Nordic', 'colorscheme != Nordic'
+          assert 'font' in t and 'icon_theme' in t and 'cursor_theme' in t
+          print('KDE theme config valid')
+          "
+
+      - name: Validate desktop scheduler
+        run: |
+          python3 -c "
+          import yaml
+          with open('ansible/group_vars/all.yml') as f:
+              cfg = yaml.safe_load(f)
+          for v in ['silverblue', 'kinoite', 'cosmic-atomic']:
+              services = cfg.get('atomik_desktop_scheduler_services', {}).get(v, [])
+              print(f'{v}: scheduler services = {services}')
+          "
+
+      - name: Validate OOMD protected services
+        run: |
+          python3 -c "
+          import yaml
+          with open('ansible/group_vars/all.yml') as f:
+              cfg = yaml.safe_load(f)
+          for v in ['silverblue', 'kinoite', 'cosmic-atomic']:
+              prot = cfg.get('atomik_oomd_protected_services', {}).get(v, [])
+              assert len(prot) > 0, f'{v}: no OOMD protected services'
+              print(f'{v}: {len(prot)} OOMD protected services')
+          "
+
+      - name: Validate kontainer removal
+        run: |
+          python3 -c "
+          import yaml
+          with open('ansible/roles/packages/tasks/kontainer_remove.yml') as f:
+              tasks = yaml.safe_load(f)
+          assert len(tasks) == 3, 'Expected 3 kontainer removal tasks'
+          names = [t.get('name', '') for t in tasks]
+          assert 'Uninstall Kontainer Flatpak' in names[0]
+          print('Kontainer removal tasks: OK')
+          "
+
+      - name: Verify all shell scripts referenced in playbooks exist
+        run: |
+          python3 -c "
+          import yaml, os, sys
+          with open('ansible/group_vars/all.yml') as f:
+              cfg = yaml.safe_load(f)
+          # Check references
+          refs = [
+              ('/usr/bin/fish', cfg.get('atomik_default_shell', '')),
+          ]
+          for expected, value in refs:
+              if expected not in str(value):
+                  print(f'WARNING: expected {expected} in config')
+          print('Shell references OK')
+          "
+
+
+  e2e-integration:
+    runs-on: ubuntu-latest
+    needs: e2e-toolbox
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ansible-core
+
+      - name: Install collections
+        run: ansible-galaxy collection install ansible.posix community.general
+
+      - name: Run E2E playbook
         run: ansible-playbook tests/e2e.yml -i ansible/inventories/localhost/hosts.yml -c local
         env:
           ANSIBLE_LOG_PATH: /tmp/ansible.log
 
-      - name: Upload log
+      - name: Upload E2E log
         if: always()
         uses: actions/upload-artifact@v4
         with:

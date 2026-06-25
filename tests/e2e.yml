@@ -144,6 +144,18 @@
           - "'brave-browser' in test_repos"
           - "'gpgcheck=1' in test_repos['brave-browser'].content"
 
+    - name: Test packages role sub-tasks exist
+      ansible.builtin.find:
+        paths: "{{ project_root }}/ansible/roles/packages/tasks"
+        patterns: "*.yml"
+      register: packages_tasks
+
+    - name: Assert packages sub-tasks present
+      ansible.builtin.assert:
+        that:
+          - packages_tasks.files | length >= 4
+        fail_msg: "Expected at least 4 packages tasks, found {{ packages_tasks.files | length }}"
+
     - name: Test security role tasks exist
       ansible.builtin.find:
         paths: "{{ project_root }}/ansible/roles/security/tasks"
@@ -161,23 +173,14 @@
         test_flatpak:
           remote: flathub
           remote_url: "https://dl.flathub.org/repo/flathub.flatpakrepo"
-          verified:
-            - com.discordapp.Discord
-            - com.slack.Slack
-            - com.jetbrains.IntelliJ-IDEA-Ultimate
-            - com.google.AndroidStudio
-          overrides:
-            com.jetbrains.IntelliJ-IDEA-Ultimate:
-              - --filesystem=home
-            com.google.AndroidStudio:
-              - --filesystem=home
+          verified: []
+          overrides: {}
 
     - name: Assert flatpak config valid
       ansible.builtin.assert:
         that:
-          - test_flatpak.verified | length == 4
-          - test_flatpak.overrides | length == 2
-          - "'com.jetbrains.IntelliJ-IDEA-Ultimate' in test_flatpak.verified"
+          - test_flatpak.verified | length == 0
+          - test_flatpak.overrides | length == 0
 
     - name: Test sysctl config parsing
       ansible.builtin.set_fact:
