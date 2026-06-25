@@ -24,18 +24,16 @@ cp "$SCRIPT_DIR/look-and-feel/com.atomik.desktop/contents/defaults" "$LF_DIR/con
 systemctl --user start plasma-plasmashell
 sleep 4
 
-# Lock runtime properties (alignment, centering, autohide)
+# Lock runtime properties for top and bottom panels
 busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s "
 var ps = panels();
 for (var i = 0; i < ps.length; i++) {
-    if (ps[i].location == 'bottom') {
-        var p = ps[i];
-p.lengthMode = 'fill';
-        p.alignment = 'center';
-        p.offset = 0;
-        p.hiding = 'none';
-        p.immutability = 2;
-    }
+    var p = ps[i];
+    p.lengthMode = 'fill';
+    p.alignment = 'center';
+    p.offset = 0;
+    p.hiding = 'none';
+    p.immutability = 2;
 }
 "
 
