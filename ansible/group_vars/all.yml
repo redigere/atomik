@@ -500,6 +500,8 @@ atomik_rpm_install:
   - tuned
   - tuned-utils
   - thermald
+  - fuse-overlayfs
+  - containers-common
 
 atomik_rpm_remove:
   - firefox
@@ -538,16 +540,8 @@ atomik_repositories:
 
 atomik_flatpak_remote: flathub
 atomik_flatpak_remote_url: "https://dl.flathub.org/repo/flathub.flatpakrepo"
-atomik_flatpak_verified:
-  - com.discordapp.Discord
-  - com.slack.Slack
-  - com.jetbrains.IntelliJ-IDEA-Ultimate
-  - com.google.AndroidStudio
-atomik_flatpak_overrides:
-  com.jetbrains.IntelliJ-IDEA-Ultimate:
-    - --filesystem=home
-  com.google.AndroidStudio:
-    - --filesystem=home
+atomik_flatpak_verified: []
+atomik_flatpak_overrides: {}
 
 atomik_firewall_services:
   - ssh
@@ -567,6 +561,8 @@ atomik_ssh_config: |
 atomik_sysctl:
   fs:
     file-max: 9223372036854775807
+    inotify:
+      max_user_watches: 524288
     protected_fifos: 2
     protected_hardlinks: 1
     protected_regular: 2
@@ -581,6 +577,10 @@ atomik_sysctl:
     pid_max: 4194304
     printk: "3 3 3 3"
     sched_autogroup_enabled: 0
+    sched_latency_ns: 6000000
+    sched_migration_cost_ns: 500000
+    sched_min_granularity_ns: 3000000
+    sched_wakeup_granularity_ns: 4000000
     sysrq: 0
     threads-max: 1048576
     timer_migration: 0
@@ -624,9 +624,10 @@ atomik_sysctl:
     max_map_count: 2147483642
     overcommit_memory: 1
     overcommit_ratio: 50
+    page_cluster: 0
     page_lock_unfairness: 1
     panic_on_oom: 0
-    swappiness: 60
+    swappiness: 10
     vfs_cache_pressure: 50
     watermark_boost_factor: 0
     zone_reclaim_mode: 0
@@ -756,9 +757,14 @@ atomik_default_shell: /usr/bin/fish
 atomik_fish_config: |
   if status is-interactive
       set -g fish_greeting ""
+      set -g fish_history_max 10000
       alias ll="ls -l"
       alias la="ls -la"
       alias update="rpm-ostree upgrade"
+      alias cleanup="rpm-ostree cleanup -m"
+      alias rebuild="rpm-ostree initramfs --enable && rpm-ostree upgrade"
+      alias ide="idea"
+      alias astudio="android-studio"
   end
 
 atomik_gnome_dconf:
@@ -772,6 +778,10 @@ atomik_gnome_dconf:
     value: "true"
   - path: /org/gnome/desktop/lockdown/disable-command-line
     value: "false"
+  - path: /org/gnome/desktop/interface/icon-theme
+    value: "'Tela-circle-nord-dark'"
+  - path: /org/gnome/desktop/interface/cursor-theme
+    value: "'Nordic-cursors'"
 
 atomik_kde_settings:
   animations:
@@ -849,12 +859,12 @@ atomik_kde_settings:
 atomik_kde_theme:
   silverblue: {}
   kinoite:
-    theme: Breeze Dark
-    colorscheme: BreezeDark
+    theme: Nordic
+    colorscheme: Nordic
     font: Cantarell 11
     monospace_font: Noto Sans Mono 11
-    icon_theme: Breeze
-    cursor_theme: Breeze
+    icon_theme: Tela-circle-nord-dark
+    cursor_theme: Adwaita
   cosmic-atomic: {}
 
 atomik_kde_config_files:
