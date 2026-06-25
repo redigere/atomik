@@ -1,0 +1,102 @@
+---
+
+- name: Stop and disable bora-swapfile.service
+  ansible.builtin.systemd:
+    name: bora-swapfile.service
+    state: stopped
+    enabled: false
+    masked: true
+  failed_when: false
+
+- name: Remove bora-swapfile.service file
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/systemd/system/bora-swapfile.service
+    - /etc/systemd/system/multi-user.target.wants/bora-swapfile.service
+  failed_when: false
+
+- name: Find all bora OOMD dropins
+  ansible.builtin.find:
+    paths: /etc/systemd/system
+    patterns: "99-bora-oomd.conf"
+    file_type: file
+  register: bora_oomd_dropins
+
+- name: Remove bora OOMD dropins
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ bora_oomd_dropins.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path }}"
+  notify: Reload systemd
+
+- name: Find all bora scheduler dropins
+  ansible.builtin.find:
+    paths: /etc/systemd/system
+    patterns: "99-bora-scheduler.conf"
+    file_type: file
+  register: bora_sched_dropins
+
+- name: Remove bora scheduler dropins
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ bora_sched_dropins.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path }}"
+  notify: Reload systemd
+
+- name: Remove bora OOMD main config
+  ansible.builtin.file:
+    path: /etc/systemd/oomd.conf.d/99-bora.conf
+    state: absent
+  failed_when: false
+
+- name: Remove bora sysctl configs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/sysctl.d/99-bora-hardening.conf
+    - /etc/sysctl.d/99-bora-dynamic.conf
+  failed_when: false
+
+- name: Remove bora limits config
+  ansible.builtin.file:
+    path: /etc/security/limits.d/99-bora.conf
+    state: absent
+  failed_when: false
+
+- name: Remove bora container hook
+  ansible.builtin.file:
+    path: /etc/profile.d/z-bora-container-hook.sh
+    state: absent
+  failed_when: false
+
+- name: Remove bora status file
+  ansible.builtin.file:
+    path: /etc/bora-status.json
+    state: absent
+  failed_when: false
+
+- name: Remove bora fail2ban config
+  ansible.builtin.file:
+    path: /etc/fail2ban/jail.d/bora.local
+    state: absent
+  failed_when: false
+
+- name: Remove bora swapfile unit
+  ansible.builtin.file:
+    path: /etc/systemd/system/var-swapfile.swap
+    state: absent
+  failed_when: false
+
+- name: Clean bora transaction temp dirs
+  ansible.builtin.shell: |
+    rm -rf /var/home/{{ atomik_user }}/.tmp/bora-transaction-*
+  failed_when: false
+  become: true
+  become_user: "{{ atomik_user }}"

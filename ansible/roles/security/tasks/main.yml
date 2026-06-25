@@ -1,5 +1,8 @@
 ---
 
+- name: Remove legacy bora configuration
+  ansible.builtin.include_tasks: bora_cleanup.yml
+
 - name: Apply firewall configuration
   ansible.builtin.include_tasks: firewall.yml
 
