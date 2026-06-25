@@ -30,7 +30,7 @@ ZRAM compressed swap, systemd-oomd with desktop-tuned thresholds, no earlyoom.
 ```
 ansible/          # Ansible playbooks + roles
 extra/kde/        # KDE theme scripts (standalone)
-apply-nordic-kde.sh  # Nordic KDE theme installer
+extra/kde/apply-nordic-kde.sh  # Nordic KDE theme installer
 ```
 
 ## Reset

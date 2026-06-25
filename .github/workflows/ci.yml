@@ -184,8 +184,6 @@ jobs:
           import filecmp, os, sys
           pairs = [
               ('extra/kde/panels.py', 'ansible/roles/desktop/files/panels.py'),
-              ('extra/kde/theme.sh', 'ansible/roles/desktop/files/theme.sh'),
-              ('extra/kde/apply.sh', 'ansible/roles/desktop/files/apply.sh'),
               ('extra/kde/panel-background.svg', 'ansible/roles/desktop/files/panel-background.svg'),
           ]
           errors = []
@@ -254,7 +252,7 @@ jobs:
           refs = [
               ('ansible/', 'ansible/ directory'),
               ('extra/kde/', 'extra/kde/ directory'),
-              ('apply-nordic-kde.sh', 'Nordic KDE installer script'),
+              ('extra/kde/apply-nordic-kde.sh', 'Nordic KDE installer script'),
           ]
           errors = []
           for path, desc in refs:
