@@ -19,10 +19,12 @@
         fi
       register: variant_result
       changed_when: false
+      tags: [always]
 
     - name: Set variant fact
       ansible.builtin.set_fact:
         atomik_variant: "{{ variant_result.stdout }}"
+      tags: [always]
 
     - name: Detect desktop environment
       ansible.builtin.set_fact:
@@ -30,6 +32,7 @@
           {%- if atomik_variant == 'kinoite' -%}kde
           {%- elif atomik_variant == 'cosmic-atomic' -%}cosmic
           {%- else -%}gnome{%- endif -%}
+      tags: [always]
 
     - name: Get real user
       ansible.builtin.shell: |
@@ -42,14 +45,17 @@
         fi
       register: user_result
       changed_when: false
+      tags: [always]
 
     - name: Set real user
       ansible.builtin.set_fact:
         atomik_user: "{{ user_result.stdout }}"
+      tags: [always]
 
     - name: Display variant info
       ansible.builtin.debug:
         msg: "Variant: {{ atomik_variant }}, Desktop: {{ atomik_desktop }}, User: {{ atomik_user }}"
+      tags: [always]
 
   roles:
     - role: repos

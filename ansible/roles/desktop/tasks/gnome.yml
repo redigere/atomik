@@ -1,8 +1,44 @@
 ---
-
 - name: Check GDM health
   ansible.builtin.shell: systemctl is-active gdm
   register: gdm_check
+  changed_when: false
+  failed_when: false
+
+- name: Install Nordic GTK theme
+  ansible.builtin.shell: |
+    THEME_DIR="$HOME/.themes/Nordic"
+    if [ ! -d "$THEME_DIR" ]; then
+      TMPDIR=$(mktemp -d)
+      git clone --depth 1 https://github.com/EliverLara/Nordic.git "$TMPDIR/Nordic"
+      mkdir -p "$HOME/.themes"
+      cp -r "$TMPDIR/Nordic/gtk-3.0" "$THEME_DIR/"
+      cp -r "$TMPDIR/Nordic/gtk-4.0" "$THEME_DIR/"
+      cp -r "$TMPDIR/Nordic/gnome-shell" "$THEME_DIR/"
+      cp -r "$TMPDIR/Nordic/metacity-1" "$THEME_DIR/"
+      cp -r "$TMPDIR/Nordic/assets" "$THEME_DIR/"
+      cp "$TMPDIR/Nordic/index.theme" "$THEME_DIR/"
+      rm -rf "$TMPDIR"
+    fi
+  become: true
+  become_user: "{{ atomik_user }}"
+  changed_when: false
+  failed_when: false
+
+- name: Apply Nordic GTK theme
+  ansible.builtin.shell: |
+    gsettings set org.gnome.desktop.interface gtk-theme "Nordic"
+    gsettings set org.gnome.desktop.wm.preferences theme "Nordic"
+    gsettings set org.gnome.shell.extensions.user-theme name "Nordic"
+    gsettings set org.gnome.desktop.interface font-name 'Cantarell 11'
+    gsettings set org.gnome.desktop.interface document-font-name 'Cantarell 11'
+    gsettings set org.gnome.desktop.interface monospace-font-name 'Noto Sans Mono 11'
+    gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
+    gsettings set org.gnome.shell.extensions.dash-to-dock dock-position BOTTOM
+    gsettings set org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 64
+    gsettings set org.gnome.shell.extensions.dash-to-dock extend-height false
+  become: true
+  become_user: "{{ atomik_user }}"
   changed_when: false
   failed_when: false
 

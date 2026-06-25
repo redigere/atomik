@@ -6,7 +6,7 @@ This document serves as the primary technical directive for all AI agents and au
 
 The first directive is the absolute preservation of system integrity. Under no circumstances shall an agent introduce code that is vulnerable, experimental, or poorly defined. All implementations must be final, robust, and idiomatic. Placeholders, comments in source files, and fallback mechanisms are strictly forbidden. If an operation cannot be performed exactly as specified, the agent must report a fatal failure rather than attempting a workaround.
 
-The second directive is the strict separation of data and logic. All configuration parameters, shell commands, and system settings must reside within the YAML configuration files. Rust and Python source code must function exclusively as execution engines for this declarative data. Agents must never hardcode strings, paths, or commands directly into the source logic.
+The second directive is the strict separation of data and logic. All configuration parameters, shell commands, and system settings must reside within the YAML configuration files. Ansible playbooks must function exclusively as execution engines for this declarative data. Agents must never hardcode strings, paths, or commands directly into the playbook logic.
 
 ## Container Orchestration Standards
 

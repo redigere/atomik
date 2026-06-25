@@ -20,3 +20,73 @@
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0644"
+
+- name: Create fish conf.d directory for theme
+  ansible.builtin.file:
+    path: "/var/home/{{ atomik_user }}/.config/fish/conf.d"
+    state: directory
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0755"
+
+- name: Deploy fish nord colors + theme config
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.config/fish/conf.d/theme.fish"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      set -g theme_color_scheme nord
+      set -g fish_color_autosuggestion 4c566a
+      set -g fish_color_cancel --reverse
+      set -g fish_color_command 88c0d0
+      set -g fish_color_comment 4c566a --italics
+      set -g fish_color_cwd 5e81ac
+      set -g fish_color_cwd_root bf616a
+      set -g fish_color_end 81a1c1
+      set -g fish_color_error bf616a
+      set -g fish_color_escape ebcb8b
+      set -g fish_color_history_current e5e9f0 --bold
+      set -g fish_color_host a3be8c
+      set -g fish_color_host_remote ebcb8b
+      set -g fish_color_keyword 81a1c1
+      set -g fish_color_normal normal
+      set -g fish_color_operator 81a1c1
+      set -g fish_color_option 8fbcbb
+      set -g fish_color_param d8dee9
+      set -g fish_color_quote a3be8c
+      set -g fish_color_redirection b48ead --bold
+      set -g fish_color_search_match --background=434c5e --bold
+      set -g fish_color_selection d8dee9 --background=434c5e --bold
+      set -g fish_color_status bf616a
+      set -g fish_color_user a3be8c
+      set -g fish_color_valid_path --underline
+      set -g fish_pager_color_completion e5e9f0
+      set -g fish_pager_color_description ebcb8b --italics
+      set -g fish_pager_color_prefix --bold --underline
+      set -g fish_pager_color_progress 3b4252 --background=d08770 --bold
+      set -g fish_pager_color_selected_background --background=434c5e
+
+- name: Install oh-my-fish
+  ansible.builtin.shell: |
+    set -euo pipefail
+    if [ ! -d "/var/home/{{ atomik_user }}/.local/share/omf" ]; then
+      git clone --depth=1 https://github.com/oh-my-fish/oh-my-fish /tmp/oh-my-fish
+      fish /tmp/oh-my-fish/bin/install --noninteractive 2>/dev/null || true
+    fi
+  become: true
+  become_user: "{{ atomik_user }}"
+  args:
+    executable: /bin/bash
+  register: omf_install
+  changed_when: omf_install.rc == 0
+  failed_when: false
+
+- name: Install bobthefish theme
+  ansible.builtin.shell: |
+    fish -c 'omf install bobthefish' 2>/dev/null || true
+  become: true
+  become_user: "{{ atomik_user }}"
+  register: omf_theme
+  changed_when: omf_theme.rc == 0
+  failed_when: false

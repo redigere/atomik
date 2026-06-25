@@ -7,11 +7,22 @@
   args:
     creates: "/var/home/{{ atomik_user }}/.opencode/bin/opencode"
 
-- name: Deploy opencode shell config
+- name: Deploy opencode shell config (Bash)
   ansible.builtin.copy:
-    dest: "/var/home/{{ atomik_user }}/.bash.d/opencode.sh"
+    dest: "/var/home/{{ atomik_user }}/.bashrc.d/opencode.sh"
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0644"
     content: |
       export PATH="$HOME/.opencode/bin:$PATH"
+
+- name: Deploy opencode shell config (Fish)
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.config/fish/conf.d/opencode.fish"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      if test -d "$HOME/.opencode/bin"
+          fish_add_path "$HOME/.opencode/bin"
+      end

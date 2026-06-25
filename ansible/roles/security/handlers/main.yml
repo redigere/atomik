@@ -39,20 +39,3 @@
     name: var-swapfile.swap
     state: started
     enabled: true
-
-- name: Restart zram
-  ansible.builtin.systemd:
-    name: systemd-zram-setup@zram0.service
-    state: restarted
-
-- name: Enable swapfile service
-  ansible.builtin.systemd:
-    name: atomik-swapfile.service
-    state: started
-    enabled: true
-
-- name: Enable swap unit
-  ansible.builtin.systemd:
-    name: var-swapfile.swap
-    state: started
-    enabled: true

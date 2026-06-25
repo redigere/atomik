@@ -1,16 +1,45 @@
 ---
 
-- name: Create bash.d directory
+- name: Create bashrc.d directory
   ansible.builtin.file:
-    path: "/var/home/{{ atomik_user }}/.bash.d"
+    path: "/var/home/{{ atomik_user }}/.bashrc.d"
     state: directory
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0755"
 
-- name: Deploy JetBrains shell aliases
+- name: Check if ~/.bash.d is a directory and not a symlink
+  ansible.builtin.stat:
+    path: "/var/home/{{ atomik_user }}/.bash.d"
+  register: devtools_bash_d_stat
+
+- name: Migrate ~/.bash.d contents to ~/.bashrc.d
+  ansible.builtin.shell: |
+    cp -rP /var/home/{{ atomik_user }}/.bash.d/* /var/home/{{ atomik_user }}/.bashrc.d/ || true
+    rm -rf /var/home/{{ atomik_user }}/.bash.d
+  when: devtools_bash_d_stat.stat.exists and devtools_bash_d_stat.stat.isdir and not devtools_bash_d_stat.stat.islnk
+  become: true
+  become_user: "{{ atomik_user }}"
+
+- name: Create symlink from .bash.d to .bashrc.d
+  ansible.builtin.file:
+    src: ".bashrc.d"
+    dest: "/var/home/{{ atomik_user }}/.bash.d"
+    state: link
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+
+- name: Create fish conf.d directory
+  ansible.builtin.file:
+    path: "/var/home/{{ atomik_user }}/.config/fish/conf.d"
+    state: directory
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0755"
+
+- name: Deploy JetBrains shell aliases (Bash)
   ansible.builtin.copy:
-    dest: "/var/home/{{ atomik_user }}/.bash.d/jetbrains.sh"
+    dest: "/var/home/{{ atomik_user }}/.bashrc.d/jetbrains.sh"
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0644"
@@ -21,21 +50,33 @@
           alias android-studio="dex $HOME/.local/share/applications/jetbrains-studio-dc863395-7115-4ff2-948e-3f642bc481dd.desktop"
       fi
 
-- name: Check if .bashrc sources .bash.d
-  ansible.builtin.lineinfile:
-    path: "/var/home/{{ atomik_user }}/.bashrc"
-    regexp: "\\.bash\\.d"
-    state: absent
-  register: devtools_bashrc_check
+- name: Deploy JetBrains shell aliases (Fish)
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.config/fish/conf.d/jetbrains.fish"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      if command -v dex >/dev/null 2>&1
+          alias jetbrains-toolbox "dex $HOME/.local/share/applications/jetbrains-toolbox.desktop"
+          alias idea "dex $HOME/.local/share/applications/jetbrains-idea-2962247c-c234-4f4f-b69a-1ba655f7a676.desktop"
+          alias android-studio "dex $HOME/.local/share/applications/jetbrains-studio-dc863395-7115-4ff2-948e-3f642bc481dd.desktop"
+      end
 
-- name: Append .bash.d sourcing to .bashrc
+- name: Remove old .bash.d sourcing block from .bashrc
   ansible.builtin.blockinfile:
     path: "/var/home/{{ atomik_user }}/.bashrc"
     marker: "# {mark} ATOMIK BASH.D"
+    state: absent
+
+- name: Append .bashrc.d sourcing to .bashrc
+  ansible.builtin.blockinfile:
+    path: "/var/home/{{ atomik_user }}/.bashrc"
+    marker: "# {mark} ATOMIK BASHRC.D"
     insertafter: EOF
     block: |
-      if [ -d ~/.bash.d ]; then
-          for rc in ~/.bash.d/*; do
+      if [ -d ~/.bashrc.d ]; then
+          for rc in ~/.bashrc.d/*; do
               if [ -f "$rc" ]; then
                   . "$rc"
               fi
@@ -44,3 +85,34 @@
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0644"
+
+- name: Find JetBrains IDE config options directories (Flatpak)
+  ansible.builtin.find:
+    paths: "/var/home/{{ atomik_user }}/.var/app/"
+    patterns: "*/JetBrains/*/options"
+    file_type: directory
+    recurse: true
+  register: devtools_jetbrains_options
+
+- name: Find Android Studio config options directories
+  ansible.builtin.find:
+    paths: "/var/home/{{ atomik_user }}/.config/Google/"
+    patterns: "AndroidStudio*/options"
+    file_type: directory
+  register: devtools_android_studio_options
+
+- name: Configure host terminal in JetBrains IDEs
+  ansible.builtin.copy:
+    dest: "{{ item.path }}/terminal.xml"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      <application>
+        <component name="TerminalOptionsProvider">
+          <option name="shellPath" value="flatpak-spawn --host /usr/bin/fish" />
+        </component>
+      </application>
+  loop: "{{ devtools_jetbrains_options.files + devtools_android_studio_options.files }}"
+  when: item.path is defined
+

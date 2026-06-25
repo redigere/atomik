@@ -7,9 +7,9 @@
   args:
     creates: "/var/home/{{ atomik_user }}/.cargo/bin/cargo"
 
-- name: Deploy cargo shell config
+- name: Deploy cargo shell config (Bash)
   ansible.builtin.copy:
-    dest: "/var/home/{{ atomik_user }}/.bash.d/cargo.sh"
+    dest: "/var/home/{{ atomik_user }}/.bashrc.d/cargo.sh"
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0644"
@@ -17,3 +17,14 @@
       if [ -f "$HOME/.cargo/env" ]; then
           . "$HOME/.cargo/env"
       fi
+
+- name: Deploy cargo shell config (Fish)
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.config/fish/conf.d/cargo.fish"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      if test -d "$HOME/.cargo/bin"
+          fish_add_path "$HOME/.cargo/bin"
+      end

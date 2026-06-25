@@ -7,9 +7,9 @@
   args:
     creates: "/var/home/{{ atomik_user }}/.nvm/nvm.sh"
 
-- name: Deploy nvm shell config
+- name: Deploy nvm shell config (Bash)
   ansible.builtin.copy:
-    dest: "/var/home/{{ atomik_user }}/.bash.d/nvm.sh"
+    dest: "/var/home/{{ atomik_user }}/.bashrc.d/nvm.sh"
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0644"
@@ -17,3 +17,53 @@
       export NVM_DIR="$HOME/.nvm"
       [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
       [ -s "$NVM_DIR/bash_completion" ] && \. "$HOME/.nvm/bash_completion"
+
+- name: Deploy nvm shell config (Fish)
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.config/fish/conf.d/nvm.fish"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      set -gx NVM_DIR "$HOME/.nvm"
+      if test -d "$NVM_DIR"
+          if test -f "$NVM_DIR/alias/default"
+              set -l default_ver (cat "$NVM_DIR/alias/default")
+              for ver_dir in $NVM_DIR/versions/node/v$default_ver*
+                  if test -d "$ver_dir/bin"
+                      fish_add_path "$ver_dir/bin"
+                      break
+                  end
+              end
+          end
+      end
+
+      function nvm
+          set -gx NVM_DIR "$HOME/.nvm"
+          set -l cmd "source \$NVM_DIR/nvm.sh && nvm $argv && echo \"__ENV_START__\" && env"
+          set -l res (bash -c "$cmd")
+          set -l in_env 0
+          for line in $res
+              if test "$line" = "__ENV_START__"
+                  set in_env 1
+                  continue
+              end
+              if test $in_env -eq 1
+                  set -l kv (string split -m 1 "=" $line)
+                  if test (count $kv) -eq 2
+                      set -l key $kv[1]
+                      set -l val $kv[2]
+                      if string match -q "NVM_*" "$key"; or string match -q "NODE_*" "$key"; or test "$key" = "PATH"
+                          if test "$key" = "PATH"
+                              set -l path_list (string split ":" $val)
+                              set -gx PATH $path_list
+                          else
+                              set -gx $key $val
+                          end
+                      end
+                  end
+              else
+                  echo "$line"
+              end
+          end
+      end

@@ -7,12 +7,58 @@
   args:
     creates: "/var/home/{{ atomik_user }}/.sdkman/bin/sdkman-init.sh"
 
-- name: Deploy sdkman shell config
+- name: Deploy sdkman shell config (Bash)
   ansible.builtin.copy:
-    dest: "/var/home/{{ atomik_user }}/.bash.d/sdkman.sh"
+    dest: "/var/home/{{ atomik_user }}/.bashrc.d/sdkman.sh"
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0644"
     content: |
       export SDKMAN_DIR="$HOME/.sdkman"
       [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]] && source "$SDKMAN_DIR/bin/sdkman-init.sh"
+
+- name: Deploy sdkman shell config (Fish)
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.config/fish/conf.d/sdkman.fish"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      set -gx SDKMAN_DIR "$HOME/.sdkman"
+      if test -d "$SDKMAN_DIR"
+          for candidate_bin in $SDKMAN_DIR/candidates/*/current/bin
+              if test -d "$candidate_bin"
+                  fish_add_path "$candidate_bin"
+              end
+          end
+      end
+
+      function sdk
+          set -gx SDKMAN_DIR "$HOME/.sdkman"
+          set -l cmd "source \$SDKMAN_DIR/bin/sdkman-init.sh && sdk $argv && echo \"__ENV_START__\" && env"
+          set -l res (bash -c "$cmd")
+          set -l in_env 0
+          for line in $res
+              if test "$line" = "__ENV_START__"
+                  set in_env 1
+                  continue
+              end
+              if test $in_env -eq 1
+                  set -l kv (string split -m 1 "=" $line)
+                  if test (count $kv) -eq 2
+                      set -l key $kv[1]
+                      set -l val $kv[2]
+                      if string match -q "SDKMAN_*" "$key"; or test "$key" = "PATH"
+                          if test "$key" = "PATH"
+                              set -l path_list (string split ":" $val)
+                              set -gx PATH $path_list
+                          else
+                              set -gx $key $val
+                          end
+                      end
+                  end
+              else
+                  echo "$line"
+              end
+          end
+      end

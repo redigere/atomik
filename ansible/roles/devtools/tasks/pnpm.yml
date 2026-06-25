@@ -10,9 +10,9 @@
   args:
     creates: "/var/home/{{ atomik_user }}/.local/share/pnpm/bin/pnpm"
 
-- name: Deploy pnpm shell config
+- name: Deploy pnpm shell config (Bash)
   ansible.builtin.copy:
-    dest: "/var/home/{{ atomik_user }}/.bash.d/pnpm.sh"
+    dest: "/var/home/{{ atomik_user }}/.bashrc.d/pnpm.sh"
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0644"
@@ -22,3 +22,15 @@
         *":$PNPM_HOME/bin:"*) ;;
         *) export PATH="$PNPM_HOME/bin:$PATH" ;;
       esac
+
+- name: Deploy pnpm shell config (Fish)
+  ansible.builtin.copy:
+    dest: "/var/home/{{ atomik_user }}/.config/fish/conf.d/pnpm.fish"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+    content: |
+      set -gx PNPM_HOME "$HOME/.local/share/pnpm"
+      if test -d "$PNPM_HOME"
+          fish_add_path "$PNPM_HOME/bin"
+      end

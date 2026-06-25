@@ -19,3 +19,6 @@
 
 - name: Setup JetBrains Toolbox
   ansible.builtin.include_tasks: jetbrains_toolbox.yml
+
+- name: Remove Kontainer
+  ansible.builtin.include_tasks: kontainer_remove.yml

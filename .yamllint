@@ -1,0 +1,20 @@
+extends: default
+
+ignore: |
+  .git/
+  .github/
+  tests/
+  ansible/roles/*/templates/*.j2
+
+rules:
+  line-length:
+    max: 160
+    level: warning
+  document-start: disable
+  truthy:
+    level: error
+  indentation:
+    spaces: 2
+    indent-sequences: true
+  comments:
+    min-spaces-from-content: 1

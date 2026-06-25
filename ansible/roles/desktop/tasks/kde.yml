@@ -35,6 +35,16 @@
     label: "{{ item.file }}/{{ item.group }}/{{ item.key }}"
   when: item.value is defined and kde_config_tool != 'none'
 
+- name: Deploy custom look-and-feel package
+  ansible.builtin.copy:
+    src: look-and-feel/
+    dest: ~/.local/share/plasma/look-and-feel/com.atomik.desktop/
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+  become: true
+  become_user: "{{ atomik_user }}"
+
 - name: Apply KDE theme settings
   ansible.builtin.shell: |
     {{ kde_config_tool }} --file kdeglobals --group General --key theme {{ atomik_kde_theme[atomik_variant].theme }}
@@ -43,6 +53,7 @@
     {{ kde_config_tool }} --file kdeglobals --group General --key fixed {{ atomik_kde_theme[atomik_variant].monospace_font }}
     {{ kde_config_tool }} --file kdeglobals --group Icons --key IconTheme {{ atomik_kde_theme[atomik_variant].icon_theme }}
     {{ kde_config_tool }} --file kdeglobals --group Icons --key cursorTheme {{ atomik_kde_theme[atomik_variant].cursor_theme }}
+    {{ kde_config_tool }} --file kdeglobals --group KDE --key LookAndFeelPackage com.atomik.desktop
     {{ kde_config_tool }} --file ksplashrc --group KSplash --key Engine none
     {{ kde_config_tool }} --file ksplashrc --group KSplash --key Theme none
   become: true
@@ -51,8 +62,8 @@
 
 - name: Deploy KDE panel setup script
   ansible.builtin.copy:
-    src: kde_panel_setup.js
-    dest: /tmp/kde_panel_setup.js
+    src: panels.py
+    dest: /tmp/kde_panels.py
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0644"
@@ -60,7 +71,32 @@
 
 - name: Run KDE panel setup
   ansible.builtin.shell: |
-    busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s "$(cat /tmp/kde_panel_setup.js)"
+    systemctl --user stop plasma-plasmashell 2>/dev/null || true
+    killall -9 plasmashell 2>/dev/null || true
+    sleep 1
+    python3 /tmp/kde_panels.py
+    systemctl --user start plasma-plasmashell
+    sleep 4
+    busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s "
+    var ps = panels();
+    for (var i = 0; i < ps.length; i++) {
+        var p = ps[i];
+        if (p.location == 'bottom') {
+            p.hiding = 'autohide';
+            p.minimumLength = 0;
+            p.maximumLength = 0;
+            p.lengthMode = 'fit';
+            p.alignment = 'center';
+            p.offset = 24;
+        } else if (p.location == 'top') {
+            p.hiding = 'none';
+            p.lengthMode = 'fill';
+            p.alignment = 'center';
+            p.offset = 0;
+            p.immutability = 2;
+        }
+    }
+    "
   become: true
   become_user: "{{ atomik_user }}"
   register: panel_result

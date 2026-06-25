@@ -1,0 +1,25 @@
+---
+- name: Uninstall Kontainer Flatpak
+  ansible.builtin.shell: |
+    flatpak uninstall -y io.github.DenysMb.Kontainer 2>/dev/null || true
+  register: kontainer_flatpak_result
+  changed_when: "'uninstalled' in kontainer_flatpak_result.stdout"
+  failed_when: false
+
+- name: Remove Kontainer source-built binary
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /usr/local/bin/kontainer
+    - /usr/local/share/applications/io.github.DenysMb.Kontainer.desktop
+    - /usr/local/share/icons/hicolor/scalable/apps/kontainer.svg
+    - /usr/local/share/icons/hicolor/256x256/apps/kontainer.png
+    - "/var/home/{{ atomik_user }}/.local/bin/kontainer"
+    - "/var/home/{{ atomik_user }}/.local/share/applications/kontainer.desktop"
+    - "/var/home/{{ atomik_user }}/.local/share/flatpak/exports/share/applications/io.github.DenysMb.Kontainer.desktop"
+
+- name: Remove Kontainer config directory
+  ansible.builtin.file:
+    path: "/var/home/{{ atomik_user }}/.config/kontainer"
+    state: absent
