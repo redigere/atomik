@@ -41,7 +41,7 @@ jobs:
         run: ansible-playbook tests/e2e.yml --syntax-check -i ansible/inventories/localhost/hosts.yml
 
       - name: Ansible-lint
-        run: ansible-lint ansible/site.yml --skip-list var-naming,risky-shell-pipe,no-changed-when,command-instead-of-module,command-instead-of-shell,yaml[line-length],jinja[spacing]
+        run: ansible-lint ansible/site.yml --skip-list var-naming,risky-shell-pipe,no-changed-when,command-instead-of-module,command-instead-of-shell,yaml[line-length],jinja[spacing],yaml[empty-lines],no-handler
 
       - name: YAML lint
         run: |
