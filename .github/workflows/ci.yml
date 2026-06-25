@@ -479,7 +479,7 @@ jobs:
 
       - name: Upload E2E log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ansible-e2e-log
           path: /tmp/ansible.log
