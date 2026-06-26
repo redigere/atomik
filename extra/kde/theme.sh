@@ -1,15 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Install Nordic-cursors if missing
+# Nordic-cursors: skip if not available (upstream repo removed)
 CURSOR_DIR="$HOME/.icons/Nordic-cursors"
 if [ ! -d "$CURSOR_DIR" ]; then
-  echo "Installing Nordic-cursors..."
-  mkdir -p "$HOME/.icons"
-  TMPDIR=$(mktemp -d)
-  curl -fsSL "https://github.com/EliverLara/Nordic/releases/download/v2.2.0/Nordic-cursors.tar.xz" | tar -xJ -C "$TMPDIR"
-  cp -r "$TMPDIR/Nordic-cursors" "$HOME/.icons/"
-  rm -rf "$TMPDIR"
+  echo "Warning: Nordic-cursors not found. Install manually or use another cursor theme."
 fi
 
 # Window decorations (Nordic theme, buttons on right)
