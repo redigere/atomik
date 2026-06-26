@@ -1,0 +1,8 @@
+---
+- name: Deploy ALSA power save disable
+  ansible.builtin.copy:
+    content: "{{ atomik_alsa_power_save }}"
+    dest: /etc/modprobe.d/99-atomik-alsa-power.conf
+    owner: root
+    group: root
+    mode: "0644"

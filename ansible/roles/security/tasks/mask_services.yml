@@ -1,0 +1,9 @@
+---
+- name: Mask non-essential system services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+    masked: true
+  loop: "{{ atomik_masked_services }}"
+  ignore_errors: true

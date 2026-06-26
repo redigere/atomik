@@ -44,3 +44,12 @@
 
 - name: Apply user shell configuration
   ansible.builtin.include_tasks: user_shell.yml
+
+- name: Apply GRUB tuning
+  ansible.builtin.include_tasks: grub.yml
+
+- name: Mask non-essential services
+  ansible.builtin.include_tasks: mask_services.yml
+
+- name: Apply audio latency tuning
+  ansible.builtin.include_tasks: audio.yml
