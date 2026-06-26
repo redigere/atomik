@@ -577,6 +577,8 @@ atomik_sysctl:
     pid_max: 4194304
     printk: "3 3 3 3"
     sched_autogroup_enabled: 0
+    perf_cpu_time_max_percent: 1
+    perf_event_paranoid: -1
     sched_latency_ns: 6000000
     sched_migration_cost_ns: 500000
     sched_min_granularity_ns: 3000000
@@ -601,10 +603,24 @@ atomik_sysctl:
       icmp_echo_ignore_broadcasts: 1
       ip_forward: 0
       ping_group_range: "0 2147483647"
+      tcp_congestion_control: bbr
       tcp_fastopen: 3
       tcp_rfc1337: 1
       tcp_syncookies: 1
       tcp_timestamps: 0
+      tcp_sack: 1
+      tcp_mtu_probing: 1
+      tcp_slow_start_after_idle: 0
+      tcp_notsent_lowat: 131072
+      udp_mem: "2097152 4194304 8388608"
+    core:
+      default_qdisc: fq
+      rmem_max: 16777216
+      wmem_max: 16777216
+      rmem_default: 262144
+      wmem_default: 262144
+      netdev_max_backlog: 5000
+      optmem_max: 25165824
     ipv6:
       conf:
         all:
@@ -617,17 +633,19 @@ atomik_sysctl:
           disable_ipv6: 0
   vm:
     compaction_proactiveness: 0
-    dirty_background_ratio: 5
+    dirty_background_ratio: 2
     dirty_expire_centisecs: 3000
-    dirty_ratio: 10
-    dirty_writeback_centisecs: 1500
+    dirty_ratio: 5
+    dirty_writeback_centisecs: 500
+    dirtytime_expire_seconds: 200
     max_map_count: 2147483642
     overcommit_memory: 1
     overcommit_ratio: 50
     page_cluster: 0
     page_lock_unfairness: 1
     panic_on_oom: 0
-    swappiness: 10
+    stat_interval: 10
+    swappiness: 5
     vfs_cache_pressure: 50
     watermark_boost_factor: 0
     zone_reclaim_mode: 0
@@ -660,9 +678,9 @@ atomik_permissions:
 
 atomik_oomd_config: |
   [OOM]
-  SwapUsedLimit=70%
-  DefaultMemoryPressureLimit=40%
-  DefaultMemoryPressureDurationSec=5s
+  SwapUsedLimit=50%
+  DefaultMemoryPressureLimit=20%
+  DefaultMemoryPressureDurationSec=2s
 
 atomik_oomd_user_slice: |
   [Service]
@@ -673,7 +691,7 @@ atomik_oomd_protected_config: |
   [Service]
   ManagedOOMMemoryPressure=kill
   ManagedOOMSwap=kill
-  OOMScoreAdjust=-500
+  OOMScoreAdjust=-1000
 
 atomik_oomd_protected_services:
   silverblue:
@@ -692,6 +710,7 @@ atomik_oomd_protected_services:
     - plasma-shell
     - startplasma
     - wireplumber
+    - alsa-state
   cosmic-atomic:
     - cosmic-comp
     - pipewire
@@ -708,9 +727,14 @@ atomik_desktop_scheduler_services:
 
 atomik_zram_config: |
   [zram0]
-  zram-size = ram / 2
+  zram-size = ram * 1.5
   compression-algorithm = zstd
   swap-priority = 100
+  fs-type = swap
+  [zram1]
+  zram-size = ram / 4
+  compression-algorithm = lz4
+  swap-priority = 50
   fs-type = swap
 
 atomik_swapfile_service: |
@@ -740,18 +764,25 @@ atomik_swapfile_unit: |
   WantedBy=swap.target
 
 atomik_io_udev_rules: |
-  ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="kyber"
-  ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{queue/scheduler}="bfq"
+  ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="kyber", ATTR{queue/nr_requests}="2048", ATTR{queue/read_ahead_kb}="4096"
+  ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{queue/scheduler}="bfq", ATTR{queue/nr_requests}="2048", ATTR{queue/read_ahead_kb}="4096"
+  ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/max_sectors_kb}="4096"
+  ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{queue/max_sectors_kb}="1024"
 
-atomik_thp_tmpfiles: "w /sys/kernel/mm/transparent_hugepage/defrag - - - - defer"
+atomik_thp_tmpfiles: |
+  w /sys/kernel/mm/transparent_hugepage/enabled - - - - always
+  w /sys/kernel/mm/transparent_hugepage/defrag - - - - never
+  w /sys/kernel/mm/transparent_hugepage/khugepaged/defrag - - - - 0
 
 atomik_desktop_scheduler_config: |
   [Service]
-  OOMScoreAdjust=-500
-  IOSchedulingClass=best-effort
+  OOMScoreAdjust=-1000
+  IOSchedulingClass=realtime
   IOSchedulingPriority=0
   CPUSchedulingPolicy=rr
-  CPUSchedulingPriority=1
+  CPUSchedulingPriority=2
+  CPUAffinity=0-1
+  Nice=-10
 
 atomik_default_shell: /usr/bin/fish
 atomik_fish_config: |
@@ -855,6 +886,62 @@ atomik_kde_settings:
       group: KDE Action Restrictions
       key: plasma/plasmashell/unlocked
       value: "false"
+  compositor:
+    - file: kwinrc
+      group: Compositing
+      key: Backend
+      value: OpenGL
+    - file: kwinrc
+      group: Compositing
+      key: MaxFps
+      value: "144"
+    - file: kwinrc
+      group: Compositing
+      key: VSync
+      value: none
+    - file: kwinrc
+      group: Compositing
+      key: Enabled
+      value: "true"
+  window_decorations:
+    - file: kwinrc
+      group: org.kde.kdecoration2
+      key: library
+      value: org.kde.kwin.aurorae
+    - file: kwinrc
+      group: org.kde.kdecoration2
+      key: theme
+      value: __aurorae__svg__Nordic
+    - file: kwinrc
+      group: org.kde.kdecoration2
+      key: BorderSize
+      value: Tiny
+    - file: kwinrc
+      group: org.kde.kdecoration2
+      key: CustomButtonPositions
+      value: "true"
+    - file: kwinrc
+      group: org.kde.kdecoration2
+      key: LeftButtons
+      value: ""
+    - file: kwinrc
+      group: org.kde.kdecoration2
+      key: RightButtons
+      value: M,S,C
+  notifications:
+    - file: knotifyrc
+      group: General
+      key: widgetStyle
+      value: Kvantum
+    - file: kdeglobals
+      group: Sounds
+      key: Enabled
+      value: "false"
+  gtk:
+    - file: kdeglobals
+      group: KDE
+      key: widgetStyle
+      value: Kvantum
 
 atomik_kde_theme:
   silverblue: {}
@@ -864,7 +951,10 @@ atomik_kde_theme:
     font: Cantarell 11
     monospace_font: Noto Sans Mono 11
     icon_theme: Tela-circle-nord-dark
-    cursor_theme: Adwaita
+    cursor_theme: Nordic-cursors
+    window_deco: __aurorae__svg__Nordic
+    border_size: Tiny
+    widget_style: Kvantum
   cosmic-atomic: {}
 
 atomik_kde_config_files:
@@ -873,11 +963,137 @@ atomik_kde_config_files:
   - plasma-org.kde.plasma.desktop-appletsrc
   - kwalletrc
   - powermanagementprofilesrc
+  - breezerc
+  - konsolerc
+  - knotifyrc
+  - kcminputrc
+  - kscreenlockerrc
 
 atomik_appnap_memory_high: 105
 atomik_appnap_interval: 1
 
 atomik_ego_extensions:
   - dash-to-dock@micxgx.gmail.com
+  - user-theme@gnome-shell-extensions.gcampax.github.com
 atomik_ego_base_url: "https://extensions.gnome.org"
 atomik_ego_install_dir: "/home/{{ atomik_user }}/.local/share/gnome-shell/extensions"
+
+atomik_gnome_dconf_full:
+  - path: /org/gnome/desktop/interface/enable-animations
+    value: "false"
+  - path: /org/gnome/desktop/interface/icon-theme
+    value: "'Tela-circle-nord-dark'"
+  - path: /org/gnome/desktop/interface/cursor-theme
+    value: "'Nordic-cursors'"
+  - path: /org/gnome/desktop/interface/gtk-theme
+    value: "'Nordic'"
+  - path: /org/gnome/desktop/interface/font-name
+    value: "'Cantarell 11'"
+  - path: /org/gnome/desktop/interface/document-font-name
+    value: "'Cantarell 11'"
+  - path: /org/gnome/desktop/interface/monospace-font-name
+    value: "'Noto Sans Mono 11'"
+  - path: /org/gnome/desktop/wm/preferences/theme
+    value: "'Nordic'"
+  - path: /org/gnome/desktop/wm/preferences/button-layout
+    value: "':minimize,maximize,close'"
+  - path: /org/gnome/desktop/shell/extensions/user-theme/name
+    value: "'Nordic'"
+  - path: /org/gnome/desktop/interface/color-scheme
+    value: "'prefer-dark'"
+  - path: /org/gnome/desktop/interface/show-battery-percentage
+    value: "true"
+  - path: /org/gnome/desktop/interface/clock-show-weekday
+    value: "true"
+  - path: /org/gnome/desktop/interface/clock-show-seconds
+    value: "false"
+  - path: /org/gnome/desktop/wm/preferences/mouse-button-modifier
+    value: "'<Super>'"
+  - path: /org/gnome/desktop/privacy/report-technical-problems
+    value: "false"
+  - path: /org/gnome/desktop/privacy/send-technical-reports
+    value: "false"
+  - path: /org/gnome/desktop/privacy/disable-microphone
+    value: "true"
+  - path: /org/gnome/desktop/privacy/disable-camera
+    value: "true"
+  - path: /org/gnome/desktop/search-providers/disable-external
+    value: "true"
+  - path: /org/gnome/desktop/sound/event-sounds
+    value: "false"
+  - path: /org/gnome/desktop/peripherals/touchpad/natural-scroll
+    value: "true"
+  - path: /org/gnome/desktop/peripherals/touchpad/tap-to-click
+    value: "true"
+  - path: /org/gnome/desktop/peripherals/mouse/natural-scroll
+    value: "true"
+  - path: /org/gnome/desktop/background/picture-uri-dark
+    value: "''"
+  - path: /org/gnome/desktop/background/color-shading-type
+    value: "'solid'"
+  - path: /org/gnome/desktop/background/primary-color
+    value: "'#2e3440'"
+  - path: /org/gnome/shell/overrides/attach-modal-dialogs
+    value: "false"
+  - path: /org/gnome/shell/overrides/workspaces-only-on-primary
+    value: "true"
+  - path: /org/gnome/mutter/check-alive-timeout
+    value: "uint32 3000"
+  - path: /org/gnome/mutter/dynamic-workspaces
+    value: "true"
+  - path: /org/gnome/mutter/center-new-windows
+    value: "true"
+
+atomik_masked_services:
+  - abrtd
+  - abrt-journal-core
+  - abrt-oops
+  - abrt-vmcore
+  - abrt-xorg
+  - cups
+  - cups-browsed
+  - fedora-policy
+  - fwupd
+  - fwupd-refresh.timer
+  - geoclue
+  - gssproxy
+  - ModemManager
+  - NetworkManager-wait-online
+  - packagekit
+  - packagekit-offline-update
+  - pmie
+  - pmlogger
+  - rpcbind
+  - rpc-statd
+  - systemd-resolved
+  - upower
+
+atomik_alsa_power_save: |
+  options snd_hda_intel power_save=0
+  options snd_hda_intel power_save_controller=N
+
+atomik_kde_environment: |
+  KWIN_DRM_BUFFER_COUNT=2
+  KWIN_DRM_DISABLE_TRIPLE_BUFFERING=1
+  KWIN_WAYLAND_NO_SUSPEND=1
+  KWIN_WAYLAND_SERVER_LOGGING=false
+  QT_QUICK_BACKEND=software
+  QT_AUTO_SCREEN_SCALE_FACTOR=0
+
+atomik_nordic_palette:
+  nord0: "#2e3440"
+  nord1: "#3b4252"
+  nord2: "#434c5e"
+  nord3: "#4c566a"
+  nord4: "#d8dee9"
+  nord5: "#e5e9f0"
+  nord6: "#eceff4"
+  nord7: "#8fbcbb"
+  nord8: "#88c0d0"
+  nord9: "#81a1c1"
+  nord10: "#5e81ac"
+  nord11: "#bf616a"
+  nord12: "#d08770"
+  nord13: "#ebcb8b"
+  nord14: "#a3be8c"
+  nord15: "#b48ead"
