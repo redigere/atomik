@@ -1,0 +1,26 @@
+---
+- name: Create GRUB tuning directory
+  ansible.builtin.file:
+    path: /etc/default/grub.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy GRUB performance config
+  ansible.builtin.template:
+    src: grub-performance.cfg.j2
+    dest: /etc/default/grub.d/99-atomik-performance.cfg
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Rebuild grub
+
+- name: Deploy GRUB GPU config
+  ansible.builtin.template:
+    src: grub-gpu.cfg.j2
+    dest: /etc/default/grub.d/99-atomik-gpu.cfg
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Rebuild grub
