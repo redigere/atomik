@@ -1,21 +1,35 @@
 [kdeglobals][KDE]
-widgetStyle=Breeze
+widgetStyle=Kvantum
+AnimationDurationFactor=0
 
 [kdeglobals][General]
 ColorScheme=Nordic
+TerminalApplication=konsole
 
 [kdeglobals][Icons]
-Theme=breeze-dark
+Theme=Tela-circle-nord-dark
 
 [plasmarc][Theme]
 name=Nordic
 
 [kcminputrc][Mouse]
-cursorTheme=Adwaita
+cursorTheme=Nordic-cursors
 
 [kwinrc][org.kde.kdecoration2]
-library=org.kde.breeze
-theme=Breeze
+library=org.kde.kwin.aurorae
+theme=__aurorae__svg__Nordic
+BorderSize=Tiny
+CustomButtonPositions=true
+LeftButtons=
+RightButtons=M,S,C
+
+[kwinrc][Compositing]
+Backend=OpenGL
+OpenGLIsUnsafe=true
+MaxFps=144
+
+[kwinrc][Blur]
+Blur=false
 
 [ksplashrc][KSplash]
 Theme=

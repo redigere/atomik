@@ -1,5 +1,4 @@
 ---
-
 - name: Detect KDE config tool
   ansible.builtin.shell: |
     if command -v kwriteconfig6 >/dev/null 2>&1; then
@@ -30,15 +29,28 @@
        atomik_kde_settings.taskbar | default([]) +
        atomik_kde_settings.telemetry | default([]) +
        atomik_kde_settings.wallet | default([]) +
-       atomik_kde_settings.restrictions | default([]) }}
+       atomik_kde_settings.restrictions | default([]) +
+       atomik_kde_settings.compositor | default([]) +
+       atomik_kde_settings.window_decorations | default([]) +
+       atomik_kde_settings.notifications | default([]) +
+       atomik_kde_settings.gtk | default([]) }}
   loop_control:
     label: "{{ item.file }}/{{ item.group }}/{{ item.key }}"
   when: item.value is defined and kde_config_tool != 'none'
 
+- name: Deploy KDE environment config
+  ansible.builtin.copy:
+    content: "{{ atomik_kde_environment }}"
+    dest: "/home/{{ atomik_user }}/.config/environment.d/atomik-kde.conf"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+  become: true
+
 - name: Deploy custom look-and-feel package
   ansible.builtin.copy:
     src: look-and-feel/
-    dest: ~/.local/share/plasma/look-and-feel/com.atomik.desktop/
+    dest: "/home/{{ atomik_user }}/.local/share/plasma/look-and-feel/com.atomik.desktop/"
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0644"
@@ -54,11 +66,126 @@
     {{ kde_config_tool }} --file kdeglobals --group Icons --key IconTheme {{ atomik_kde_theme[atomik_variant].icon_theme }}
     {{ kde_config_tool }} --file kdeglobals --group Icons --key cursorTheme {{ atomik_kde_theme[atomik_variant].cursor_theme }}
     {{ kde_config_tool }} --file kdeglobals --group KDE --key LookAndFeelPackage com.atomik.desktop
+    {{ kde_config_tool }} --file kdeglobals --group KDE --key widgetStyle {{ atomik_kde_theme[atomik_variant].widget_style }}
     {{ kde_config_tool }} --file ksplashrc --group KSplash --key Engine none
     {{ kde_config_tool }} --file ksplashrc --group KSplash --key Theme none
   become: true
   become_user: "{{ atomik_user }}"
   when: atomik_kde_theme[atomik_variant] | length > 0 and kde_config_tool != 'none'
+
+- name: Create Konsole themes directory
+  ansible.builtin.file:
+    path: "/home/{{ atomik_user }}/.local/share/konsole"
+    state: directory
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0755"
+  become: true
+
+- name: Deploy Konsole Nordic color scheme
+  ansible.builtin.copy:
+    content: |
+      [Background]
+      Color=46,52,64
+      [BackgroundFaint]
+      Color=46,52,64
+      [BackgroundIntense]
+      Color=46,52,64
+      [Foreground]
+      Color=216,222,233
+      [ForegroundFaint]
+      Color=216,222,233
+      [ForegroundIntense]
+      Color=216,222,233
+      [General]
+      Description=Nordic
+      Opacity=0.95
+      Wallpaper=
+      [Color0]
+      Color=59,66,82
+      [Color0Faint]
+      Color=59,66,82
+      [Color0Intense]
+      Color=76,86,106
+      [Color1]
+      Color=191,97,106
+      [Color1Faint]
+      Color=191,97,106
+      [Color1Intense]
+      Color=191,97,106
+      [Color2]
+      Color=163,190,140
+      [Color2Faint]
+      Color=163,190,140
+      [Color2Intense]
+      Color=163,190,140
+      [Color3]
+      Color=235,203,139
+      [Color3Faint]
+      Color=235,203,139
+      [Color3Intense]
+      Color=235,203,139
+      [Color4]
+      Color=129,161,193
+      [Color4Faint]
+      Color=129,161,193
+      [Color4Intense]
+      Color=129,161,193
+      [Color5]
+      Color=180,142,173
+      [Color5Faint]
+      Color=180,142,173
+      [Color5Intense]
+      Color=180,142,173
+      [Color6]
+      Color=136,192,208
+      [Color6Faint]
+      Color=136,192,208
+      [Color6Intense]
+      Color=136,192,208
+      [Color7]
+      Color=229,229,229
+      [Color7Faint]
+      Color=229,229,229
+      [Color7Intense]
+      Color=255,255,255
+    dest: "/home/{{ atomik_user }}/.local/share/konsole/Nordic.colorscheme"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+  become: true
+  become_user: "{{ atomik_user }}"
+
+- name: Deploy Konsole Nordic profile
+  ansible.builtin.copy:
+    content: |
+      [Appearance]
+      ColorScheme=Nordic
+      Font=Noto Sans Mono,11
+      [General]
+      Name=Nordic
+      Parent=FALLBACK/
+      TerminalCenter=false
+      TerminalRows=40
+      TerminalColumns=120
+      [Scrolling]
+      HistoryMode=2
+      HistorySize=10000
+      [TerminalFeatures]
+      BlinkingCursorEnabled=false
+    dest: "/home/{{ atomik_user }}/.local/share/konsole/Nordic.profile"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+  become: true
+  become_user: "{{ atomik_user }}"
+
+- name: Set Konsole default profile
+  ansible.builtin.shell: |
+    {{ kde_config_tool }} --file konsolerc --group "Desktop Entry" --key DefaultProfile "Nordic.profile"
+  become: true
+  become_user: "{{ atomik_user }}"
+  when: kde_config_tool != 'none'
 
 - name: Deploy KDE panel setup script
   ansible.builtin.copy:
