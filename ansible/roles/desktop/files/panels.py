@@ -163,11 +163,11 @@ with open(appletsrc, 'w') as f:
 view = """\
 [PlasmaViews][Panel 1]
 floating=0
-opacity=1
+opacity=0
 shell=org.kde.plasma.desktop
 
 [PlasmaViews][Panel 1][Defaults]
-thickness=32
+thickness=1
 
 [PlasmaViews][Panel 2]
 floating=1
