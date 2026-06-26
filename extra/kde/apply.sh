@@ -35,10 +35,6 @@ for (var i = 0; i < ps.length; i++) {
         p.hiding = 'dodgeWindows';
         p.lengthMode = 'fit';
         p.offset = 48;
-    } else {
-        p.hiding = 'auto';
-        p.lengthMode = 'fill';
-        p.offset = 0;
     }
 }
 "

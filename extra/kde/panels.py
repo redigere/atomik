@@ -10,22 +10,6 @@ with open(appletsrc) as f:
 header = [l for l in lines if not l.startswith('[Containments]')]
 screendump = [l for l in lines if l.startswith('[ScreenMapping]')]
 
-# Top panel: invisible placeholder so Panel 2 stays at bottom
-toppanel = """\
-[Containments][1]
-activityId=
-formfactor=2
-immutability=2
-lastScreen=0
-location=3
-plugin=org.kde.panel
-wallpaperplugin=org.kde.image
-
-[Containments][1][General]
-AppletOrder=
-
-"""
-
 # Bottom panel: kickoff + icontasks(pinned) + spacer + systemtray
 panel = """\
 [Containments][2]
@@ -155,20 +139,10 @@ AppletOrder=3;5;6;7;9
 with open(appletsrc, 'w') as f:
     f.writelines(header)
     f.write('\n')
-    f.write(toppanel)
-    f.write('\n')
     f.write(panel)
     f.write(''.join(screendump))
 
 view = """\
-[PlasmaViews][Panel 1]
-floating=0
-opacity=0
-shell=org.kde.plasma.desktop
-
-[PlasmaViews][Panel 1][Defaults]
-thickness=1
-
 [PlasmaViews][Panel 2]
 floating=1
 opacity=1
