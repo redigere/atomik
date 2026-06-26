@@ -23,10 +23,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Ansible
+      - name: Install Ansible + Python deps
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ansible-core python3-pip
+          python3 -m venv /tmp/atomik-venv
+          /tmp/atomik-venv/bin/pip install --quiet pyyaml
 
       - name: Install collections
         run: ansible-galaxy collection install ansible.posix community.general
@@ -59,21 +61,23 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq shellcheck nodejs
+          sudo apt-get install -y -qq nodejs
 
-      - name: Shellcheck all shell scripts
+      - name: Set up Python venv
         run: |
-          find . -name '*.sh' -not -path './.git/*' -print -exec shellcheck {} \+
+          python3 -m venv /tmp/atomik-venv
+          /tmp/atomik-venv/bin/pip install --quiet pyyaml jsonschema
 
-      - name: Validate Python syntax
+      - name: Validate Python syntax + venv imports
         run: |
-          python3 -m py_compile extra/kde/panels.py
-          python3 -m py_compile extra/kde/apply_kde.py
-          python3 -m py_compile extra/kde/revert_kde.py
-          python3 -m py_compile extra/kde/install_nordic_kde.py
-          python3 -m py_compile extra/gnome/apply_gnome.py
-          python3 -m py_compile extra/flatpak/apply_flatpak.py
-          python3 -m py_compile ansible/roles/desktop/files/panels.py
+          /tmp/atomik-venv/bin/python3 -m py_compile extra/kde/panels.py
+          /tmp/atomik-venv/bin/python3 -m py_compile extra/kde/apply_kde.py
+          /tmp/atomik-venv/bin/python3 -m py_compile extra/kde/revert_kde.py
+          /tmp/atomik-venv/bin/python3 -m py_compile extra/kde/install_nordic_kde.py
+          /tmp/atomik-venv/bin/python3 -m py_compile extra/gnome/apply_gnome.py
+          /tmp/atomik-venv/bin/python3 -m py_compile extra/flatpak/apply_flatpak.py
+          /tmp/atomik-venv/bin/python3 -m py_compile ansible/roles/desktop/files/panels.py
+          /tmp/atomik-venv/bin/python3 -m py_compile ansible/roles/desktop/templates/atomik-appnap.py.j2
 
       - name: Validate JSON
         run: |
@@ -129,7 +133,7 @@ jobs:
 
       - name: Verify all template variables exist in group_vars
         run: |
-          python3 -c "
+          /tmp/atomik-venv/bin/python3 -c "
           import re, yaml, os, sys
           with open('ansible/group_vars/all.yml') as f:
               vars_def = yaml.safe_load(f)
@@ -153,7 +157,7 @@ jobs:
 
       - name: Verify file cross-references
         run: |
-          python3 -c "
+          /tmp/atomik-venv/bin/python3 -c "
           import yaml, os, sys
           errors = []
           with open('ansible/group_vars/all.yml') as f:
@@ -185,7 +189,7 @@ jobs:
 
       - name: Verify extra/ and ansible/roles/desktop/files/ are in sync
         run: |
-          python3 -c "
+          /tmp/atomik-venv/bin/python3 -c "
           import filecmp, os, sys
           pairs = [
               ('extra/kde/panels.py', 'ansible/roles/desktop/files/panels.py'),
@@ -212,7 +216,7 @@ jobs:
 
       - name: Verify no empty role subtask lists
         run: |
-          python3 -c "
+          /tmp/atomik-venv/bin/python3 -c "
           import yaml, os, sys
           errors = []
           tasks_dir = 'ansible/roles'
@@ -346,7 +350,7 @@ jobs:
 
       - name: Validate flatpak config
         run: |
-          python3 -c "
+          /tmp/atomik-venv/bin/python3 -c "
           import yaml
           with open('ansible/group_vars/all.yml') as f:
               cfg = yaml.safe_load(f)
@@ -359,7 +363,7 @@ jobs:
 
       - name: Validate sysctl config
         run: |
-          python3 -c "
+          /tmp/atomik-venv/bin/python3 -c "
           import yaml
           with open('ansible/group_vars/all.yml') as f:
               cfg = yaml.safe_load(f)
@@ -372,7 +376,7 @@ jobs:
 
       - name: Validate variant configs
         run: |
-          python3 -c "
+          /tmp/atomik-venv/bin/python3 -c "
           import yaml
           with open('ansible/group_vars/all.yml') as f:
               cfg = yaml.safe_load(f)
@@ -386,7 +390,7 @@ jobs:
 
       - name: Validate RPM conflict
         run: |
-          python3 -c "
+          /tmp/atomik-venv/bin/python3 -c "
           import yaml
           with open('ansible/group_vars/all.yml') as f:
               cfg = yaml.safe_load(f)
@@ -401,7 +405,7 @@ jobs:
 
       - name: Validate KDE theme config
         run: |
-          python3 -c "
+          /tmp/atomik-venv/bin/python3 -c "
           import yaml
           with open('ansible/group_vars/all.yml') as f:
               cfg = yaml.safe_load(f)
@@ -414,7 +418,7 @@ jobs:
 
       - name: Validate desktop scheduler
         run: |
-          python3 -c "
+          /tmp/atomik-venv/bin/python3 -c "
           import yaml
           with open('ansible/group_vars/all.yml') as f:
               cfg = yaml.safe_load(f)

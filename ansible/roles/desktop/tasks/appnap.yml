@@ -10,8 +10,8 @@
 
 - name: Deploy App Nap script
   ansible.builtin.template:
-    src: atomik-appnap.sh.j2
-    dest: /usr/local/lib/atomik/atomik-appnap.sh
+    src: atomik-appnap.py.j2
+    dest: /usr/local/lib/atomik/atomik-appnap.py
     owner: root
     group: root
     mode: "0755"

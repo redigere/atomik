@@ -74,7 +74,15 @@ enabled=true
         if kvantum_src.exists():
             shutil.copytree(kvantum_src, kvantum_dst)
 
-        run("bash", str(tmpdir / "Tela-circle" / "install.sh"), "nord", check=False)
+        icons_dir = LOCAL_SHARE / "icons"
+        icons_dir.mkdir(parents=True, exist_ok=True)
+        tela_src = tmpdir / "Tela-circle"
+        for variant in ["Tela-circle", "Tela-circle-nord"]:
+            src = tela_src / variant
+            dst = icons_dir / variant
+            shutil.rmtree(dst, ignore_errors=True)
+            if src.exists():
+                shutil.copytree(src, dst)
 
         run("plasma-apply-desktoptheme", "Nordic", check=False)
         run("plasma-apply-colorscheme", "Nordic", check=False)

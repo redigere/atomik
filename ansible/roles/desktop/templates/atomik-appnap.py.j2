@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+import time
+import re
+
+INTERVAL = {{ atomik_appnap_interval }}
+HIGH_PERCENT = {{ atomik_appnap_memory_high }}
+CGROUP_BASE = "/sys/fs/cgroup"
+
+
+def get_focused_pid():
+    try:
+        out = subprocess.run(
+            [
+                "busctl", "call", "--user",
+                "org.gnome.Shell", "/org/gnome/Shell",
+                "org.gnome.Shell", "Eval", "s",
+                "global.display.focus_window?.get_pid() || 0"
+            ],
+            capture_output=True, text=True, timeout=5,
+        )
+        m = re.search(r"'(\d+)'", out.stdout)
+        if m and m.group(1) != "0":
+            return int(m.group(1))
+    except Exception:
+        pass
+    try:
+        out = subprocess.run(
+            ["busctl", "call", "--user", "org.kde.KWin", "/KWin", "org.kde.KWin", "currentDesktop"],
+            capture_output=True, text=True, timeout=5,
+        )
+        m = re.search(r"\d+", out.stdout)
+        if m:
+            try:
+                return int(m.group())
+            except ValueError:
+                pass
+    except Exception:
+        pass
+    try:
+        out = subprocess.run(
+            ["xdotool", "getactivewindow", "getwindowpid"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if out.stdout.strip().isdigit():
+            return int(out.stdout.strip())
+    except Exception:
+        pass
+    return None
+
+
+def get_scopes():
+    out = subprocess.run(
+        ["systemctl", "--user", "list-units", "--type=scope", "--no-legend", "--no-pager", "--plain"],
+        capture_output=True, text=True, timeout=5,
+    )
+    scopes = []
+    for line in out.stdout.strip().splitlines():
+        scope = line.split()[0]
+        scopes.append(scope)
+    return scopes
+
+
+def get_cgroup_path(scope):
+    out = subprocess.run(
+        ["systemctl", "--user", "show", "-p", "ControlGroup", scope],
+        capture_output=True, text=True, timeout=5,
+    )
+    for line in out.stdout.strip().splitlines():
+        if line.startswith("ControlGroup="):
+            return line[len("ControlGroup="):]
+    return None
+
+
+def is_focused(pid, cgroup_procs):
+    if pid is None:
+        return False
+    try:
+        with open(cgroup_procs) as f:
+            for line in f:
+                if line.strip() == str(pid):
+                    return True
+    except OSError:
+        pass
+    return False
+
+
+def main():
+    while True:
+        focused_pid = get_focused_pid()
+        for scope in get_scopes():
+            cgroup_rel = get_cgroup_path(scope)
+            if not cgroup_rel:
+                continue
+            full_path = CGROUP_BASE + cgroup_rel
+            mem_high = os.path.join(full_path, "memory.high")
+            mem_current = os.path.join(full_path, "memory.current")
+            if not os.path.isfile(mem_high) or not os.path.isfile(mem_current):
+                continue
+            cgroup_procs = os.path.join(full_path, "cgroup.procs")
+            if not os.path.isfile(cgroup_procs):
+                continue
+            if is_focused(focused_pid, cgroup_procs):
+                with open(mem_high, "w") as f:
+                    f.write("max")
+            else:
+                try:
+                    with open(mem_current) as f:
+                        current = int(f.read().strip())
+                except (OSError, ValueError):
+                    continue
+                high_value = current * HIGH_PERCENT // 100
+                if high_value <= current:
+                    high_value = current + 1
+                with open(mem_high, "w") as f:
+                    f.write(str(high_value))
+                mem_reclaim = os.path.join(full_path, "memory.reclaim")
+                if os.path.isfile(mem_reclaim):
+                    reclaim_val = current * 10 // 100
+                    if reclaim_val > 0:
+                        try:
+                            with open(mem_reclaim, "w") as f:
+                                f.write(str(reclaim_val))
+                        except OSError:
+                            pass
+        time.sleep(INTERVAL)
+
+
+if __name__ == "__main__":
+    main()

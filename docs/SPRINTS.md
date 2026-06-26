@@ -13,7 +13,7 @@ Tutti i parametri di configurazione vivono in `group_vars/all.yml`; i playbook s
 |---|---|---|
 | Definire palette rigida | `docs/NORDIC_PALETTE.md` | 16 colori esadecimali (nord0–nord15) + 4 tonalità frost + aurora |
 | Verificare coerenza icone | Audit `Tela-circle-nord-dark` | Sovrascrivere eventuali icone fuori palette con template SVG custom |
-| Campionare Nordic-kDE repo | `extra/kde/theme.sh` | Estrarre i colori esatti usati da Aurorae e aggiornare palette |
+| Campionare Nordic-kDE repo | `extra/kde/install_nordic_kde.py` | Estrarre i colori esatti usati da Aurorae e aggiornare palette |
 | Generare wallpaper unificato | `files/wallpaper/` | Wallpaper gradient SVG/Fluid nord + variante solida notte |
 | Audit asset esistenti | Tutti i file `.svg`, `.svgz` | Convertire a palette esatta |
 
