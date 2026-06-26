@@ -1,5 +1,15 @@
+{% if ansible_processor_cores | default(4) > 2 %}
+GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX \
+  mitigations=off \
+  nowatchdog \
+  nohz_full=2-{{ ansible_processor_cores - 1 }} \
+  rcu_nocbs=2-{{ ansible_processor_cores - 1 }} \
+  skew_tick=1 \
+  audit=0"
+{% else %}
 GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX \
   mitigations=off \
   nowatchdog \
   skew_tick=1 \
   audit=0"
+{% endif %}

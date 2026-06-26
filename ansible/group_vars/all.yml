@@ -1043,6 +1043,14 @@ atomik_gnome_dconf_full:
     value: "true"
   - path: /org/gnome/mutter/center-new-windows
     value: "true"
+  - path: /org/gnome/settings-daemon/plugins/color/night-light-enabled
+    value: "true"
+  - path: /org/gnome/settings-daemon/plugins/color/night-light-temperature
+    value: "uint32 3800"
+  - path: /org/gnome/desktop/interface/accent-color
+    value: "'blue'"
+  - path: /org/freedesktop/tracker/miner/files/enable-fs-watchers
+    value: "false"
 
 atomik_masked_services:
   - abrtd

@@ -2,4 +2,6 @@
 GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX amdgpu.sched_jobs=1024 amdgpu.gpu_recovery=0"
 {% elif 'nvidia' in ansible_kernel_modules | default([]) %}
 GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX nvidia.NVreg_EnableGpuFirmware=0 nvidia_drm.modeset=1 nvidia_drm.fbdev=1"
+{% elif 'i915' in ansible_kernel_modules | default([]) %}
+GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX i915.enable_psr=0"
 {% endif %}

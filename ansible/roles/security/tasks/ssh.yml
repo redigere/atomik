@@ -1,8 +1,15 @@
 ---
 
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+- name: Set sshd service name fact
+  ansible.builtin.set_fact:
+    atomik_sshd_service: "{{ 'ssh' if 'ssh.service' in ansible_facts.services else 'sshd' }}"
+
 - name: Enable sshd
   ansible.builtin.systemd:
-    name: sshd
+    name: "{{ atomik_sshd_service }}"
     state: started
     enabled: true
 

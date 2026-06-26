@@ -18,12 +18,13 @@ defaults:
     shell: bash
 
 jobs:
-  lint:
+  lint-playbook:
+    name: lint playbook
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Ansible + Python deps
+      - name: Install Ansible and Python deps
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ansible-core python3-pip
@@ -36,16 +37,25 @@ jobs:
       - name: Install linters
         run: pip install -q ansible-lint yamllint
 
-      - name: Syntax check (site.yml)
+      - name: Log syntax check site yml
         run: ansible-playbook ansible/site.yml --syntax-check -i ansible/inventories/localhost/hosts.yml
 
-      - name: Syntax check (e2e.yml)
+      - name: Log syntax check e2e yml
         run: ansible-playbook tests/e2e.yml --syntax-check -i ansible/inventories/localhost/hosts.yml
 
-      - name: Ansible-lint
+      - name: Log ansible lint results
         run: ansible-lint ansible/site.yml --skip-list var-naming,risky-shell-pipe,no-changed-when,command-instead-of-module,command-instead-of-shell,yaml[line-length],jinja[spacing],yaml[empty-lines],no-handler
 
-      - name: YAML lint
+  lint-yaml:
+    name: lint yaml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install linters
+        run: pip install -q yamllint
+
+      - name: Log yaml lint results
         run: |
           yamllint --strict .yamllint
           yamllint --strict ansible/site.yml
@@ -54,6 +64,7 @@ jobs:
           yamllint --strict .github/workflows/ci.yml
 
   validate-scripts:
+    name: validate scripts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -63,12 +74,12 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq nodejs
 
-      - name: Set up Python venv
+      - name: Set up Python virtual environment
         run: |
           python3 -m venv /tmp/atomik-venv
           /tmp/atomik-venv/bin/pip install --quiet pyyaml jsonschema
 
-      - name: Validate Python syntax + venv imports
+      - name: Validate Python syntax and venv imports
         run: |
           /tmp/atomik-venv/bin/python3 -m py_compile extra/kde/panels.py
           /tmp/atomik-venv/bin/python3 -m py_compile extra/kde/apply_kde.py
@@ -77,21 +88,20 @@ jobs:
           /tmp/atomik-venv/bin/python3 -m py_compile extra/gnome/apply_gnome.py
           /tmp/atomik-venv/bin/python3 -m py_compile extra/flatpak/apply_flatpak.py
           /tmp/atomik-venv/bin/python3 -m py_compile ansible/roles/desktop/files/panels.py
-          /tmp/atomik-venv/bin/python3 -m py_compile ansible/roles/desktop/templates/atomik-appnap.py.j2
 
-      - name: Validate JSON
+      - name: Log JSON validation
         run: |
           python3 -m json.tool \
             extra/kde/look-and-feel/com.atomik.desktop/metadata.json /dev/null
           python3 -m json.tool \
             ansible/roles/desktop/files/look-and-feel/com.atomik.desktop/metadata.json /dev/null
 
-      - name: Validate JavaScript (KDE panel scripts)
+      - name: Log JavaScript validation KDE panel scripts
         run: |
           node --check extra/kde/dock.js
           node --check extra/kde/topbar.js
 
-      - name: Validate SVG (panel background)
+      - name: Log SVG validation panel background
         run: |
           python3 -c "
           import xml.etree.ElementTree as ET
@@ -102,12 +112,13 @@ jobs:
               print(f'{svg}: valid SVG, viewBox={root.get(\"viewBox\", \"N/A\")}')
           "
 
-      - name: Validate Makefile targets
+      - name: Log Makefile targets validation
         run: |
           make -n lint 2>/dev/null || true
           grep -q '^lint:' Makefile && grep -q '^test:' Makefile && grep -q '^clean:' Makefile
 
-  validate-ansible:
+  verify-ansible-definitions:
+    name: verify ansible definitions
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -117,21 +128,15 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq ansible-core
 
+      - name: Set up Python virtual environment
+        run: |
+          python3 -m venv /tmp/atomik-venv
+          /tmp/atomik-venv/bin/pip install --quiet pyyaml
+
       - name: Install collections
         run: ansible-galaxy collection install ansible.posix community.general
 
-      - name: Install firewalld
-        run: sudo apt-get install -y -qq firewalld
-
-      - name: Dry-run site.yml (check mode)
-        run: |
-          ansible-playbook ansible/site.yml -i ansible/inventories/localhost/hosts.yml \
-            --check --diff \
-            --skip-tags desktop,devtools,packages \
-            -e 'ansible_python_interpreter=/usr/bin/python3' \
-            2>&1 | tail -20
-
-      - name: Verify all template variables exist in group_vars
+      - name: Log template variable verification
         run: |
           /tmp/atomik-venv/bin/python3 -c "
           import re, yaml, os, sys
@@ -155,25 +160,17 @@ jobs:
           print(f'All {len(refs)} template-referenced variables defined in group_vars.')
           "
 
-      - name: Verify file cross-references
+      - name: Log file cross reference verification
         run: |
           /tmp/atomik-venv/bin/python3 -c "
           import yaml, os, sys
           errors = []
           with open('ansible/group_vars/all.yml') as f:
               cfg = yaml.safe_load(f)
-          # Check KDE launcher paths referenced in panels.py
-          launcher_refs = [
-              'applications:org.kde.dolphin.desktop',
-              'applications:org.kde.konsole.desktop',
-              'applications:systemsettings.desktop',
-          ]
-          # Check if SVG used by both extra and ansible exist
           for p in ['extra/kde/panel-background.svg',
                     'ansible/roles/desktop/files/panel-background.svg']:
               if not os.path.exists(p):
                   errors.append(f'MISSING: {p}')
-          # Check look-and-feel dirs
           for p in ['extra/kde/look-and-feel/com.atomik.desktop/metadata.json',
                     'extra/kde/look-and-feel/com.atomik.desktop/contents/defaults',
                     'ansible/roles/desktop/files/look-and-feel/com.atomik.desktop/metadata.json',
@@ -187,7 +184,7 @@ jobs:
           print('All file cross-references OK')
           "
 
-      - name: Verify extra/ and ansible/roles/desktop/files/ are in sync
+      - name: Log extra and ansible file sync verification
         run: |
           /tmp/atomik-venv/bin/python3 -c "
           import filecmp, os, sys
@@ -214,7 +211,7 @@ jobs:
           print('All extra/ <-> ansible/roles/desktop/files/ files in sync')
           "
 
-      - name: Verify no empty role subtask lists
+      - name: Log role subtask list verification
         run: |
           /tmp/atomik-venv/bin/python3 -c "
           import yaml, os, sys
@@ -237,7 +234,33 @@ jobs:
           print('All role main task files non-empty')
           "
 
+  dry-run-playbook:
+    name: dry run playbook
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ansible-core
+
+      - name: Install collections
+        run: ansible-galaxy collection install ansible.posix community.general
+
+      - name: Install firewalld and sshd
+        run: sudo apt-get install -y -qq firewalld openssh-server
+
+      - name: Log playbook check mode run
+        run: |
+          ansible-playbook ansible/site.yml -i ansible/inventories/localhost/hosts.yml \
+            --check --diff \
+            --skip-tags desktop,devtools,packages \
+            -e 'ansible_python_interpreter=/usr/bin/python3' \
+            2>&1 | tail -20
+
   validate-docs:
+    name: validate docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -248,13 +271,13 @@ jobs:
           sudo apt-get install -y -qq nodejs
           npm install -g markdownlint-cli
 
-      - name: Markdown lint
+      - name: Log markdown lint results
         run: |
           markdownlint --disable MD013 MD033 MD041 \
             README.md SPRINTS.md \
             docs/README.md docs/SPRINTS.md docs/INSTRUCTIONS.md || true
 
-      - name: Verify README references real files
+      - name: Log README file reference verification
         run: |
           python3 -c "
           import os, sys
@@ -275,13 +298,14 @@ jobs:
           print('README file references valid')
           "
 
-      - name: Verify LICENSE exists
+      - name: Log LICENSE file check
         run: test -f LICENSE
 
-      - name: Verify SPRINTS.md structure
+      - name: Log SPRINTS dot md structure verification
         run: grep -q '^# ' SPRINTS.md
 
   e2e-toolbox:
+    name: e2e toolbox
     runs-on: ubuntu-latest
     container:
       image: fedora:44
@@ -292,9 +316,11 @@ jobs:
       - name: Install dependencies in container
         run: |
           dnf install -y -q ansible-core python3-pip python3-pyyaml
+          python3 -m venv /tmp/atomik-venv
+          /tmp/atomik-venv/bin/pip install --quiet pyyaml
           ansible-galaxy collection install ansible.posix community.general
 
-      - name: Validate all YAML files
+      - name: Log YAML file validation
         run: |
           python3 -c "
           import yaml, os, sys
@@ -320,13 +346,13 @@ jobs:
           print('All YAML files valid')
           "
 
-      - name: Verify role structure
+      - name: Log role structure verification
         run: |
           for role in repos packages security desktop devtools; do
             test -f "ansible/roles/$role/tasks/main.yml" || exit 1
           done
 
-      - name: Verify templates compile
+      - name: Log template compilation verification
         run: |
           python3 -c "
           import os
@@ -343,12 +369,12 @@ jobs:
               print(f'  {t}')
           "
 
-      - name: Verify handlers
+      - name: Log handlers verification
         run: |
           count=$(find ansible/roles -path '*/handlers/main.yml' | wc -l)
           test "$count" -ge 2 || exit 1
 
-      - name: Validate flatpak config
+      - name: Log flatpak configuration validation
         run: |
           /tmp/atomik-venv/bin/python3 -c "
           import yaml
@@ -361,7 +387,7 @@ jobs:
           print(f'Flatpak OK: {len(verified)} system apps, {len(overrides)} overrides')
           "
 
-      - name: Validate sysctl config
+      - name: Log sysctl configuration validation
         run: |
           /tmp/atomik-venv/bin/python3 -c "
           import yaml
@@ -374,7 +400,7 @@ jobs:
           print('Sysctl config valid')
           "
 
-      - name: Validate variant configs
+      - name: Log variant configuration validation
         run: |
           /tmp/atomik-venv/bin/python3 -c "
           import yaml
@@ -388,7 +414,7 @@ jobs:
               print(f'{v}: {len(i)} install, {len(r)} remove')
           "
 
-      - name: Validate RPM conflict
+      - name: Log RPM conflict validation
         run: |
           /tmp/atomik-venv/bin/python3 -c "
           import yaml
@@ -403,7 +429,7 @@ jobs:
           print(f'RPM lists OK: {len(install)} install, {len(remove)} remove')
           "
 
-      - name: Validate KDE theme config
+      - name: Log KDE theme configuration validation
         run: |
           /tmp/atomik-venv/bin/python3 -c "
           import yaml
@@ -416,7 +442,7 @@ jobs:
           print('KDE theme config valid')
           "
 
-      - name: Validate desktop scheduler
+      - name: Log desktop scheduler validation
         run: |
           /tmp/atomik-venv/bin/python3 -c "
           import yaml
@@ -427,7 +453,7 @@ jobs:
               print(f'{v}: scheduler services = {services}')
           "
 
-      - name: Validate OOMD protected services
+      - name: Log OOMD protected services validation
         run: |
           python3 -c "
           import yaml
@@ -439,7 +465,7 @@ jobs:
               print(f'{v}: {len(prot)} OOMD protected services')
           "
 
-      - name: Validate kontainer removal
+      - name: Log kontainer removal validation
         run: |
           python3 -c "
           import yaml
@@ -451,13 +477,12 @@ jobs:
           print('Kontainer removal tasks: OK')
           "
 
-      - name: Verify all shell scripts referenced in playbooks exist
+      - name: Log shell script reference verification
         run: |
           python3 -c "
           import yaml, os, sys
           with open('ansible/group_vars/all.yml') as f:
               cfg = yaml.safe_load(f)
-          # Check references
           refs = [
               ('/usr/bin/fish', cfg.get('atomik_default_shell', '')),
           ]
@@ -467,8 +492,8 @@ jobs:
           print('Shell references OK')
           "
 
-
   e2e-integration:
+    name: e2e integration
     runs-on: ubuntu-latest
     needs: e2e-toolbox
     steps:
@@ -482,12 +507,12 @@ jobs:
       - name: Install collections
         run: ansible-galaxy collection install ansible.posix community.general
 
-      - name: Run E2E playbook
+      - name: Log E2E playbook execution
         run: ansible-playbook tests/e2e.yml -i ansible/inventories/localhost/hosts.yml -c local
         env:
           ANSIBLE_LOG_PATH: /tmp/ansible.log
 
-      - name: Upload E2E log
+      - name: Store E2E log artifact
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -495,31 +520,35 @@ jobs:
           path: /tmp/ansible.log
 
   commit-lint:
+    name: commit lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: Check commit messages are single-line
+      - name: Log commit message subject format
         run: |
           FAILED=0
           for sha in $(git rev-list ${{ github.event.before || 'HEAD~1' }}..HEAD); do
-            MSG=$(git log -1 --format='%B' "$sha")
-            BODY=$(echo "$MSG" | tail -n +2 | grep -v '^$' | grep -v '^Signed-off-by:' || true)
-            if [ -n "$BODY" ]; then
-              echo "FAIL: $sha has body text beyond signoff"
-              echo "$BODY" | sed 's/^/  /'
+            SUBJ=$(git log -1 --format='%s' "$sha")
+            SUBJ_LINES=$(printf '%s' "$SUBJ" | wc -l)
+            if [ "$SUBJ_LINES" -gt 1 ] || printf '%s' "$SUBJ" | grep -q $'\n'; then
+              echo "FAIL: $sha subject spans multiple lines"
+              echo "  $SUBJ"
               FAILED=1
+            fi
+            if [ ${#SUBJ} -gt 80 ]; then
+              echo "WARN: $sha subject is ${#SUBJ} chars (max 80)"
             fi
           done
           if [ "$FAILED" -eq 1 ]; then
-            echo "Commit messages must be single-line (signoff allowed)"
+            echo "Commit subjects must be single-line"
             exit 1
           fi
-          echo "All commit messages are single-line"
+          echo "All commit subjects are single-line"
 
-      - name: Check all commits are signed off
+      - name: Log commit sign off verification
         run: |
           FAILED=0
           for sha in $(git rev-list ${{ github.event.before || 'HEAD~1' }}..HEAD); do

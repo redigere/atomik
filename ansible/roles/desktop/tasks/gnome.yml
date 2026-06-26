@@ -5,6 +5,23 @@
   changed_when: false
   failed_when: false
 
+- name: Deploy Nordic GDM theme
+  ansible.builtin.shell: |
+    GDM_THEME_DIR="/usr/share/gnome-shell/theme/Nordic"
+    if [ ! -d "$GDM_THEME_DIR" ]; then
+      TMPDIR=$(mktemp -d)
+      git clone --depth 1 https://github.com/EliverLara/Nordic.git "$TMPDIR/Nordic"
+      mkdir -p "/usr/share/gnome-shell/theme"
+      cp -r "$TMPDIR/Nordic/gnome-shell" "$GDM_THEME_DIR"
+      rm -rf "$TMPDIR"
+    fi
+    gsettings set org.gnome.login-screen logo ''
+    gsettings set org.gnome.desktop.interface gtk-theme Nordic 2>/dev/null || true
+  become: true
+  changed_when: false
+  failed_when: false
+  when: gdm_check.rc == 0
+
 - name: Install Nordic GTK theme
   ansible.builtin.shell: |
     THEME_DIR="$HOME/.themes/Nordic"
