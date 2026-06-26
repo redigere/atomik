@@ -12,11 +12,11 @@
       TMPDIR=$(mktemp -d)
       git clone --depth 1 https://github.com/EliverLara/Nordic.git "$TMPDIR/Nordic"
       mkdir -p "$HOME/.themes"
-      cp -r "$TMPDIR/Nordic/gtk-3.0" "$THEME_DIR/"
-      cp -r "$TMPDIR/Nordic/gtk-4.0" "$THEME_DIR/"
-      cp -r "$TMPDIR/Nordic/gnome-shell" "$THEME_DIR/"
-      cp -r "$TMPDIR/Nordic/metacity-1" "$THEME_DIR/"
-      cp -r "$TMPDIR/Nordic/assets" "$THEME_DIR/"
+      for dir in gtk-3.0 gtk-4.0 gnome-shell metacity-1 assets; do
+        if [ -d "$TMPDIR/Nordic/$dir" ]; then
+          cp -r "$TMPDIR/Nordic/$dir" "$THEME_DIR/"
+        fi
+      done
       cp "$TMPDIR/Nordic/index.theme" "$THEME_DIR/"
       rm -rf "$TMPDIR"
     fi
@@ -25,32 +25,93 @@
   changed_when: false
   failed_when: false
 
-- name: Apply Nordic GTK theme
+- name: Install Nordic cursors
+  ansible.builtin.shell: |
+    CURSOR_DIR="$HOME/.icons/Nordic-cursors"
+    if [ ! -d "$CURSOR_DIR" ]; then
+      TMPDIR=$(mktemp -d)
+      curl -fsSL "https://github.com/EliverLara/Nordic/releases/download/v2.2.0/Nordic-cursors.tar.xz" | tar -xJ -C "$TMPDIR"
+      mkdir -p "$HOME/.icons"
+      cp -r "$TMPDIR/Nordic-cursors" "$HOME/.icons/"
+      rm -rf "$TMPDIR"
+    fi
+  become: true
+  become_user: "{{ atomik_user }}"
+  changed_when: false
+  failed_when: true
+
+- name: Apply Nordic GNOME theme
   ansible.builtin.shell: |
     gsettings set org.gnome.desktop.interface gtk-theme "Nordic"
     gsettings set org.gnome.desktop.wm.preferences theme "Nordic"
     gsettings set org.gnome.shell.extensions.user-theme name "Nordic"
+    gsettings set org.gnome.desktop.interface icon-theme "Tela-circle-nord-dark"
+    gsettings set org.gnome.desktop.interface cursor-theme "Nordic-cursors"
     gsettings set org.gnome.desktop.interface font-name 'Cantarell 11'
     gsettings set org.gnome.desktop.interface document-font-name 'Cantarell 11'
     gsettings set org.gnome.desktop.interface monospace-font-name 'Noto Sans Mono 11'
     gsettings set org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
+    gsettings set org.gnome.desktop.wm.preferences mouse-button-modifier '<Super>'
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+    gsettings set org.gnome.desktop.interface show-battery-percentage true
+    gsettings set org.gnome.desktop.interface clock-show-weekday true
+    gsettings set org.gnome.desktop.interface enable-animations false
+    gsettings set org.gnome.desktop.peripherals.touchpad natural-scroll true
+    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
     gsettings set org.gnome.shell.extensions.dash-to-dock dock-position BOTTOM
-    gsettings set org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 64
+    gsettings set org.gnome.shell.extensions.dash-to-dock dash-max-icon-size 40
     gsettings set org.gnome.shell.extensions.dash-to-dock extend-height false
+    gsettings set org.gnome.shell.extensions.dash-to-dock pressure-threshold 100
+    gsettings set org.gnome.shell.extensions.dash-to-dock intellihide true
+    gsettings set org.gnome.shell.extensions.dash-to-dock background-opacity 0.25
   become: true
   become_user: "{{ atomik_user }}"
   changed_when: false
   failed_when: false
 
-- name: Apply dconf settings
+- name: Apply full dconf settings
   ansible.builtin.shell: |
     dconf write {{ item.path }} {{ item.value }}
   become: true
   become_user: "{{ atomik_user }}"
-  loop: "{{ atomik_gnome_dconf }}"
+  loop: "{{ atomik_gnome_dconf_full }}"
   loop_control:
     label: "{{ item.path }}"
   when: gdm_check.rc == 0
   register: dconf_result
   changed_when: dconf_result.rc == 0
+  failed_when: false
+
+- name: Create GNOME Terminal profile directory
+  ansible.builtin.file:
+    path: "/home/{{ atomik_user }}/.local/share/gnome-terminal"
+    state: directory
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0755"
+  become: true
+
+- name: Deploy GNOME Terminal Nordic profile
+  ansible.builtin.shell: |
+    PROFILE_ID=$(dconf read /org/gnome/terminal/legacy/profiles:/default | tr -d "''" || echo "")
+    if [ -z "$PROFILE_ID" ] || [ "$PROFILE_ID" = "''" ]; then
+      PROFILE_ID="$(uuidgen)"
+      dconf write /org/gnome/terminal/legacy/profiles:/default "'$PROFILE_ID'"
+    fi
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/visible-name "'Nordic'"
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/use-theme-colors false
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/foreground-color "'#D8DEE9'"
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/background-color "'#2E3440'"
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/bold-color "'#D8DEE9'"
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/cursor-color "'#88C0D0'"
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/palette "['#3B4252', '#BF616A', '#A3BE8C', '#EBCB8B', '#81A1C1', '#B48EAD', '#88C0D0', '#E5E9F0', '#4C566A', '#BF616A', '#A3BE8C', '#EBCB8B', '#81A1C1', '#B48EAD', '#8FBCBB', '#ECEFF4']"
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/font "'Noto Sans Mono 11'"
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/audible-bell false
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/scrollback-unlimited false
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/scrollback-lines 10000
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/cursor-blink-mode "'off'"
+    dconf write /org/gnome/terminal/legacy/profiles:/:$PROFILE_ID/use-theme-transparency false
+  become: true
+  become_user: "{{ atomik_user }}"
+  changed_when: false
   failed_when: false
