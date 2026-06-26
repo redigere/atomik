@@ -24,13 +24,13 @@ help:
 apply-extra: apply-extra-kde apply-extra-gnome
 
 apply-extra-kde:
-	bash extra/kde/apply.sh
+	python3 extra/kde/apply_kde.py
 
 apply-extra-gnome:
-	bash extra/gnome/apply.sh
+	python3 extra/gnome/apply_gnome.py
 
 apply-extra-flatpak:
-	pkexec ansible-playbook extra/flatpak/site.yml -i ansible/inventories/localhost/hosts.yml
+	python3 extra/flatpak/apply_flatpak.py
 
 lint:
 	cd ansible && ansible-playbook --syntax-check site.yml
