@@ -10,7 +10,7 @@ with open(appletsrc) as f:
 header = [l for l in lines if not l.startswith('[Containments]')]
 screendump = [l for l in lines if l.startswith('[ScreenMapping]')]
 
-# Top panel: simple clock only
+# Top panel: empty
 toppanel = """\
 [Containments][1]
 activityId=
@@ -21,18 +21,8 @@ location=3
 plugin=org.kde.panel
 wallpaperplugin=org.kde.image
 
-[Containments][1][Applets][2]
-immutability=2
-plugin=org.kde.plasma.digitalclock
-
-[Containments][1][Applets][2][Configuration][General]
-compactMode=true
-showDate=true
-showSeconds=false
-use24hFormat=true
-
 [Containments][1][General]
-AppletOrder=2
+AppletOrder=
 
 """
 
@@ -70,6 +60,16 @@ plugin=org.kde.plasma.panelspacer
 
 [Containments][2][Applets][6][Configuration][General]
 expanding=true
+
+[Containments][2][Applets][7]
+immutability=2
+plugin=org.kde.plasma.digitalclock
+
+[Containments][2][Applets][7][Configuration][General]
+compactMode=true
+showDate=true
+showSeconds=false
+use24hFormat=true
 
 [Containments][2][Applets][9]
 immutability=2
@@ -148,7 +148,7 @@ extraItems=org.kde.plasma.vault,org.kde.kscreen,org.kde.plasma.battery,org.kde.p
 knownItems=org.kde.plasma.vault,org.kde.kscreen,org.kde.plasma.battery,org.kde.plasma.bluetooth,org.kde.plasma.brightness,org.kde.plasma.cameraindicator,org.kde.plasma.clipboard,org.kde.plasma.devicenotifier,org.kde.plasma.keyboardindicator,org.kde.plasma.keyboardlayout,org.kde.plasma.manage-inputmethod,org.kde.plasma.mediacontroller,org.kde.plasma.networkmanagement,org.kde.plasma.notifications,org.kde.plasma.printmanager,org.kde.plasma.volume,org.kde.plasma.weather
 
 [Containments][2][General]
-AppletOrder=3;5;6;9
+AppletOrder=3;5;6;7;9
 
 """
 
