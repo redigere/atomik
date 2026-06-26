@@ -6,4 +6,5 @@
     enabled: false
     masked: true
   loop: "{{ atomik_masked_services }}"
-  ignore_errors: true
+  register: mask_result
+  failed_when: mask_result is failed and 'Could not find the requested service' not in mask_result.msg

@@ -68,6 +68,11 @@ jobs:
       - name: Validate Python syntax
         run: |
           python3 -m py_compile extra/kde/panels.py
+          python3 -m py_compile extra/kde/apply_kde.py
+          python3 -m py_compile extra/kde/revert_kde.py
+          python3 -m py_compile extra/kde/install_nordic_kde.py
+          python3 -m py_compile extra/gnome/apply_gnome.py
+          python3 -m py_compile extra/flatpak/apply_flatpak.py
           python3 -m py_compile ansible/roles/desktop/files/panels.py
 
       - name: Validate JSON
@@ -76,8 +81,6 @@ jobs:
             extra/kde/look-and-feel/com.atomik.desktop/metadata.json /dev/null
           python3 -m json.tool \
             ansible/roles/desktop/files/look-and-feel/com.atomik.desktop/metadata.json /dev/null
-          python3 -m json.tool \
-            ansible/roles/desktop/files/look-and-feel/look-and-feel/com.atomik.desktop/metadata.json /dev/null
 
       - name: Validate JavaScript (KDE panel scripts)
         run: |
@@ -113,6 +116,9 @@ jobs:
       - name: Install collections
         run: ansible-galaxy collection install ansible.posix community.general
 
+      - name: Install firewalld
+        run: sudo apt-get install -y -qq firewalld
+
       - name: Dry-run site.yml (check mode)
         run: |
           ansible-playbook ansible/site.yml -i ansible/inventories/localhost/hosts.yml \
@@ -120,7 +126,6 @@ jobs:
             --skip-tags desktop,devtools,packages \
             -e 'ansible_python_interpreter=/usr/bin/python3' \
             2>&1 | tail -20
-        continue-on-error: true
 
       - name: Verify all template variables exist in group_vars
         run: |
@@ -252,7 +257,8 @@ jobs:
           refs = [
               ('ansible/', 'ansible/ directory'),
               ('extra/kde/', 'extra/kde/ directory'),
-              ('extra/kde/apply-nordic-kde.sh', 'Nordic KDE installer script'),
+              ('extra/kde/apply_kde.py', 'KDE apply script'),
+              ('docs/SPRINTS.md', 'Sprint roadmap'),
           ]
           errors = []
           for path, desc in refs:
