@@ -29,13 +29,11 @@ busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluate
 var ps = panels();
 for (var i = 0; i < ps.length; i++) {
     var p = ps[i];
+    p.lengthMode = 'fill';
     p.alignment = 'center';
+    p.offset = 0;
+    p.hiding = 'none';
     p.immutability = 2;
-    if (p.location === 'bottom') {
-        p.hiding = 'dodgeWindows';
-        p.lengthMode = 'fill';
-        p.offset = 0;
-    }
 }
 "
 

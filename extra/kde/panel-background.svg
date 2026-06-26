@@ -3,39 +3,71 @@
      xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <defs id="defs15">
     <style type="text/css" id="current-color-scheme">
-      .ColorScheme-Text { color:#2e3440; stop-color:#2e3440; }
-      .ColorScheme-Background { color:#2e3440; stop-color:#2e3440; }
+      .ColorScheme-Text { color:#232629; stop-color:#232629; }
+      .ColorScheme-Background { color:#eff0f1; stop-color:#eff0f1; }
     </style>
+    <linearGradient id="grad-top" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="12">
+      <stop offset="0" style="stop-color:currentColor;stop-opacity:0"/>
+      <stop offset="1" style="stop-color:currentColor;stop-opacity:0.45"/>
+    </linearGradient>
+    <linearGradient id="grad-bottom" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="12">
+      <stop offset="0" style="stop-color:currentColor;stop-opacity:0.45"/>
+      <stop offset="1" style="stop-color:currentColor;stop-opacity:0"/>
+    </linearGradient>
+    <linearGradient id="grad-left" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="12" y2="0">
+      <stop offset="0" style="stop-color:currentColor;stop-opacity:0"/>
+      <stop offset="1" style="stop-color:currentColor;stop-opacity:0.45"/>
+    </linearGradient>
+    <linearGradient id="grad-right" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="12" y2="0">
+      <stop offset="0" style="stop-color:currentColor;stop-opacity:0.45"/>
+      <stop offset="1" style="stop-color:currentColor;stop-opacity:0"/>
+    </linearGradient>
+    <radialGradient id="grad-topleft" gradientUnits="userSpaceOnUse" cx="12" cy="12" r="12">
+      <stop offset="0" style="stop-color:currentColor;stop-opacity:0.45"/>
+      <stop offset="1" style="stop-color:currentColor;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="grad-topright" gradientUnits="userSpaceOnUse" cx="0" cy="12" r="12">
+      <stop offset="0" style="stop-color:currentColor;stop-opacity:0.45"/>
+      <stop offset="1" style="stop-color:currentColor;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="grad-bottomleft" gradientUnits="userSpaceOnUse" cx="12" cy="0" r="12">
+      <stop offset="0" style="stop-color:currentColor;stop-opacity:0.45"/>
+      <stop offset="1" style="stop-color:currentColor;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="grad-bottomright" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="12">
+      <stop offset="0" style="stop-color:currentColor;stop-opacity:0.45"/>
+      <stop offset="1" style="stop-color:currentColor;stop-opacity:0"/>
+    </radialGradient>
   </defs>
-  <!-- Center tile -->
+  <!-- Center tile (fully inside panel, no edge fading) -->
   <g id="center" transform="translate(12,22)">
-    <rect height="30" width="32" style="fill:#2e3440"/>
+    <rect height="30" width="32" style="opacity:0.45;fill:currentColor" class="ColorScheme-Background"/>
   </g>
-  <!-- Edge tiles -->
+  <!-- Edge tiles with gradient to transparent -->
   <g id="top" transform="translate(12,10)">
-    <rect height="12" width="32" style="fill:#2e3440"/>
+    <rect height="12" width="32" style="fill:url(#grad-top);fill-opacity:1"/>
   </g>
   <g id="bottom" transform="translate(12,52)">
-    <rect height="12" width="32" style="fill:#2e3440"/>
+    <rect height="12" width="32" style="fill:url(#grad-bottom);fill-opacity:1"/>
   </g>
   <g id="left" transform="translate(0,22)">
-    <rect height="30" width="12" style="fill:#2e3440"/>
+    <rect height="30" width="12" style="fill:url(#grad-left);fill-opacity:1"/>
   </g>
   <g id="right" transform="translate(145,22)">
-    <rect height="30" width="12" style="fill:#2e3440"/>
+    <rect height="30" width="12" style="fill:url(#grad-right);fill-opacity:1"/>
   </g>
-  <!-- Corners -->
+  <!-- Corners with radial gradient -->
   <g id="topleft" transform="translate(0,10)">
-    <path d="M 0,12 H 12 V 0 C 4,0 0,4 0,12 Z" style="fill:#2e3440"/>
+    <path d="M 0,12 H 12 V 0 C 4,0 0,4 0,12 Z" style="fill:url(#grad-topleft);fill-opacity:1"/>
   </g>
   <g id="topright" transform="translate(145,10)">
-    <path d="M 0,0 V 12 H 12 C 12,4 8,0 0,0 Z" style="fill:#2e3440"/>
+    <path d="M 0,0 V 12 H 12 C 12,4 8,0 0,0 Z" style="fill:url(#grad-topright);fill-opacity:1"/>
   </g>
   <g id="bottomleft" transform="translate(0,52)">
-    <path d="M 12,12 V 0 H 0 c 0,8 4,12 12,12 z" style="fill:#2e3440"/>
+    <path d="M 12,12 V 0 H 0 c 0,8 4,12 12,12 z" style="fill:url(#grad-bottomleft);fill-opacity:1"/>
   </g>
   <g id="bottomright" transform="translate(145,52)">
-    <path d="M 0,12 V 0 H 12 C 12,8 8,12 0,12 Z" style="fill:#2e3440"/>
+    <path d="M 0,12 V 0 H 12 C 12,8 8,12 0,12 Z" style="fill:url(#grad-bottomright);fill-opacity:1"/>
   </g>
   <!-- Hints -->
   <rect id="hint-top-margin" height="4" style="fill:#ff00ff" width="4" x="20" y="10"/>
