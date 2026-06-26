@@ -33,8 +33,8 @@ for (var i = 0; i < ps.length; i++) {
     p.immutability = 2;
     if (p.location === 'bottom') {
         p.hiding = 'dodgeWindows';
-        p.lengthMode = 'fit';
-        p.offset = 48;
+        p.lengthMode = 'fill';
+        p.offset = 0;
     }
 }
 "

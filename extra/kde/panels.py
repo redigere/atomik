@@ -144,7 +144,7 @@ with open(appletsrc, 'w') as f:
 
 view = """\
 [PlasmaViews][Panel 2]
-floating=1
+floating=0
 opacity=1
 shell=org.kde.plasma.desktop
 
