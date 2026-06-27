@@ -21,6 +21,22 @@
     group: "{{ atomik_user }}"
     mode: "0644"
 
+- name: Create fish functions directory
+  ansible.builtin.file:
+    path: "/var/home/{{ atomik_user }}/.config/fish/functions"
+    state: directory
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0755"
+
+- name: Deploy fish prompt
+  ansible.builtin.copy:
+    content: "{{ atomik_fish_prompt }}"
+    dest: "/var/home/{{ atomik_user }}/.config/fish/functions/fish_prompt.fish"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+
 - name: Create fish conf.d directory for theme
   ansible.builtin.file:
     path: "/var/home/{{ atomik_user }}/.config/fish/conf.d"
