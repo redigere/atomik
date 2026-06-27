@@ -798,6 +798,18 @@ atomik_fish_config: |
       alias astudio="android-studio"
   end
 
+atomik_fish_prompt: |
+  function fish_prompt
+      set_color brgreen
+      printf '%s' (pwd)
+      set_color normal
+      if test (id -u) -eq 0
+          printf ' # '
+      else
+          printf ' $ '
+      end
+  end
+
 atomik_gnome_dconf:
   - path: /org/gnome/desktop/interface/enable-animations
     value: "false"
