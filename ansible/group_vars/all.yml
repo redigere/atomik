@@ -810,6 +810,10 @@ atomik_fish_prompt: |
       end
   end
 
+  function fish_title
+      printf '%s' (pwd)
+  end
+
 atomik_gnome_dconf:
   - path: /org/gnome/desktop/interface/enable-animations
     value: "false"
