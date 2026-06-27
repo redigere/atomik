@@ -785,35 +785,6 @@ atomik_desktop_scheduler_config: |
   Nice=-10
 
 atomik_default_shell: /usr/bin/fish
-atomik_fish_config: |
-  if status is-interactive
-      set -g fish_greeting ""
-      set -g fish_history_max 10000
-      alias ll="ls -l"
-      alias la="ls -la"
-      alias update="rpm-ostree upgrade"
-      alias cleanup="rpm-ostree cleanup -m"
-      alias rebuild="rpm-ostree initramfs --enable && rpm-ostree upgrade"
-      alias ide="idea"
-      alias astudio="android-studio"
-  end
-
-atomik_fish_prompt: |
-  function fish_prompt
-      set_color brgreen
-      printf '%s' (pwd)
-      set_color normal
-      if test (id -u) -eq 0
-          printf ' # '
-      else
-          printf ' $ '
-      end
-  end
-
-  function fish_title
-      printf '%s' (pwd)
-  end
-
 atomik_gnome_dconf:
   - path: /org/gnome/desktop/interface/enable-animations
     value: "false"
