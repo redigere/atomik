@@ -1,0 +1,17 @@
+{
+    "install_dir": "~/.local/share/codium",
+    "bin_dir": "~/.local/bin",
+    "config_dir": "~/.config/VSCodium",
+    "extensions_dir": "~/.vscode-oss/extensions",
+    "desktop_dir": "~/.local/share/applications",
+    "release_api": "https://api.github.com/repos/VSCodium/vscodium/releases/latest",
+    "tarball_glob": "linux.*x64(?!.*cli).*tar.gz",
+    "ms_marketplace": "https://marketplace.visualstudio.com/_apis/public/gallery",
+    "cleanup_patterns": ["telemetry", "crashReporter", "copilot"],
+    "cleanup_dirs": [
+        "Cache", "CachedData", "CachedExtensionVSIXs", "CachedExtensions",
+        "Code Cache", "GPUCache", "logs", "Service Worker",
+        "sessionStorage", "blob_storage"
+    ],
+    "desktop_entry": "[Desktop Entry]\nName=VSCodium\nComment=Code Editing. Redefined.\nExec={exec} %F\nIcon={icon}\nType=Application\nStartupNotify=false\nStartupWMClass=VSCodium\nCategories=TextEditor;Development;IDE;\nMimeType=text/plain;inode/directory;application/x-code-workspace;\nActions=new-empty-window;\nKeywords=vscode;\n\n[Desktop Action new-empty-window]\nName=New Empty Window\nExec={exec} --new-window %F\nIcon={icon}"
+}

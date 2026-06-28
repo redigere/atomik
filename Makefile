@@ -1,5 +1,5 @@
 .PHONY: all lint check test install-deps apply clean help
-.PHONY: apply-repos apply-packages apply-security apply-desktop apply-devtools apply-extra apply-extra-kde apply-extra-gnome apply-extra-flatpak
+.PHONY: apply-repos apply-packages apply-security apply-desktop apply-devtools apply-extra apply-extra-kde apply-extra-gnome apply-extra-flatpak apply-extra-codium
 
 ANSIBLE_PLAYBOOK = ansible-playbook ansible/site.yml -i ansible/inventories/localhost/hosts.yml
 E2E_PLAYBOOK = ansible-playbook tests/e2e.yml -i ansible/inventories/localhost/hosts.yml -c local
@@ -18,6 +18,7 @@ help:
 	@echo "  make apply-extra-kde  Apply KDE panels/theme"
 	@echo "  make apply-extra-gnome Apply GNOME theme/settings"
 	@echo "  make apply-extra-flatpak Install non-system Flatpak apps"
+	@echo "  make apply-extra-codium  Install and configure debloated VSCodium"
 	@echo "  make install-deps     Install ansible-core + collections"
 	@echo "  make clean            Remove ansible retry files"
 
@@ -32,10 +33,14 @@ apply-extra-gnome:
 apply-extra-flatpak:
 	python3 extra/flatpak/apply_flatpak.py
 
+apply-extra-codium:
+	python3 extra/codium/apply_codium.py
+
 lint:
 	cd ansible && ansible-playbook --syntax-check site.yml
 	cd ansible && ansible-playbook --syntax-check ../tests/e2e.yml
 	cd ansible && ansible-playbook --syntax-check ../extra/flatpak/site.yml
+	cd ansible && ansible-playbook --syntax-check ../extra/codium/site.yml
 
 test:
 	$(E2E_PLAYBOOK)

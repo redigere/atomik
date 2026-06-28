@@ -1,0 +1,49 @@
+{
+    "marketplace": "https://marketplace.visualstudio.com/_apis/public/gallery",
+    "extensions": {
+        "openvsx": [
+            "charliermarsh.ruff",
+            "tamasfe.even-better-toml",
+            "usernamehw.errorlens",
+            "christian-kohler.path-intellisense",
+            "mhutchie.git-graph",
+            "Gruntfuggly.todo-tree",
+            "humao.rest-client",
+            "ms-vscode.makefile-tools",
+            "esbenp.prettier-vscode",
+            "dbaeumer.vscode-eslint",
+            "bradlc.vscode-tailwindcss",
+            "formulahendry.auto-rename-tag",
+            "formulahendry.auto-close-tag",
+            "golang.go",
+            "rust-lang.rust-analyzer",
+            "fwcd.kotlin",
+            "foxundermoon.shell-format",
+            "timonwong.shellcheck",
+            "redhat.ansible",
+            "redhat.vscode-yaml",
+            "redhat.vscode-xml",
+            "ms-azuretools.vscode-docker",
+            "ms-vscode.powershell",
+            "ms-vscode.hexeditor",
+            "zhuangtongfa.material-theme",
+            "dracula-theme.theme-dracula",
+            "github.github-vscode-theme",
+            "PKief.material-icon-theme",
+            "catppuccin.catppuccin-vsc-icons"
+        ],
+        "microsoft_vsix": [
+            "ms-python.python",
+            "ms-python.debugpy",
+            "ms-python.vscode-pylance",
+            "ms-python.vscode-python-envs",
+            "ms-python.mypy-type-checker",
+            "ms-azuretools.vscode-containers",
+            "ms-vscode.cmake-tools",
+            "ms-vscode.cpptools",
+            "redhat.java",
+            "ms-vscode.vscode-typescript-next",
+            "davidanson.vscode-markdownlint"
+        ]
+    }
+}

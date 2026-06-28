@@ -1,0 +1,183 @@
+---
+- name: Install and configure debloated VSCodium
+  hosts: localhost
+  become: true
+  gather_facts: true
+
+  vars:
+    codium_install_dir: "/var/home/{{ ansible_user_id }}/.local/share/codium"
+    codium_config_dir: "/var/home/{{ ansible_user_id }}/.config/VSCodium"
+    codium_extensions_dir: "/var/home/{{ ansible_user_id }}/.vscode-oss/extensions"
+
+  tasks:
+    - name: Skip in containers
+      when: >
+        ansible_facts.get('virtualization_type', '') == 'container' or
+        ansible_facts.get('file', {}).get('/run/.toolboxenv', {}).get('exists', false)
+      block:
+        - name: End play
+          ansible.builtin.meta: end_play
+
+    - name: Get latest VSCodium release URL
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/VSCodium/vscodium/releases/latest
+        return_content: true
+      register: release_json
+      changed_when: false
+      failed_when: false
+
+    - name: Extract tarball URL
+      ansible.builtin.set_fact:
+        codium_tarball_url: "{{ (release_json.content | from_json).assets | selectattr('name', 'match', '.*linux.*x64(?!.*cli).*tar.gz') | map(attribute='browser_download_url') | first }}"
+      when: release_json is succeeded
+
+    - name: Download VSCodium tarball
+      ansible.builtin.get_url:
+        url: "{{ codium_tarball_url }}"
+        dest: /tmp/vscodium.tar.gz
+        mode: "0644"
+      when: codium_tarball_url is defined
+      register: download_result
+      changed_when: download_result is changed
+
+    - name: Create VSCodium install directory
+      ansible.builtin.file:
+        path: "{{ codium_install_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Extract VSCodium
+      ansible.builtin.unarchive:
+        src: /tmp/vscodium.tar.gz
+        dest: "{{ codium_install_dir }}"
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+      when: download_result is changed
+
+    - name: Create codium symlink
+      ansible.builtin.file:
+        src: "{{ codium_install_dir }}/codium"
+        dest: "/var/home/{{ ansible_user_id }}/.local/bin/codium"
+        state: link
+        force: true
+
+    - name: Create User config directory
+      ansible.builtin.file:
+        path: "{{ codium_config_dir }}/User"
+        state: directory
+        mode: "0755"
+
+    - name: Deploy debloated settings
+      ansible.builtin.copy:
+        src: settings.json
+        dest: "{{ codium_config_dir }}/User/settings.json"
+        mode: "0644"
+
+    - name: Create extensions directory
+      ansible.builtin.file:
+        path: "{{ codium_extensions_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Install Open VSX extensions
+      ansible.builtin.shell: |
+        ELECTRON_RUN_AS_NODE=1 {{ codium_install_dir }}/codium \
+          {{ codium_install_dir }}/resources/app/out/cli.js \
+          --install-extension {{ item }} 2>&1 | tail -1
+      loop:
+        - eamodio.gitlens
+        - charliermarsh.ruff
+        - tamasfe.even-better-toml
+        - bradlc.vscode-tailwindcss
+        - usernamehw.errorlens
+        - christian-kohler.path-intellisense
+        - formulahendry.auto-rename-tag
+        - formulahendry.auto-close-tag
+        - mhutchie.git-graph
+        - gruntfuggly.todo-tree
+        - humao.rest-client
+        - ms-vscode.makefile-tools
+        - dbaeumer.vscode-eslint
+        - esbenp.prettier-vscode
+        - golang.go
+        - rust-lang.rust-analyzer
+        - redhat.ansible
+        - redhat.vscode-yaml
+        - redhat.java
+        - redhat.vscode-xml
+        - ms-azuretools.vscode-docker
+        - ms-vscode.powershell
+        - ms-python.python
+        - ms-python.debugpy
+        - ms-python.mypy-type-checker
+        - ms-vscode.cpptools
+        - ms-vscode.cmake-tools
+        - ms-vscode.hexeditor
+        - ms-vscode.vscode-typescript-next
+      loop_control:
+        label: "{{ item }}"
+      register: ext_install
+      changed_when: "'successfully' in ext_install.stdout"
+      failed_when: false
+
+    - name: Install Microsoft VSIX extensions
+      ansible.builtin.shell: |
+        publisher="{{ item.split('.')[0] }}"
+        name="{{ item.split('.') | join('_', 1) }}"
+        url="https://marketplace.visualstudio.com/_apis/public/gallery/publishers/${publisher}/vsextensions/${name}/latest/vspackage"
+        curl -fsSL "$url" -o /tmp/ext.vsix
+        file_type=$(file -b /tmp/ext.vsix | head -1)
+        if echo "$file_type" | grep -qi gzip; then
+          mv /tmp/ext.vsix /tmp/ext.vsix.gz && gunzip -f /tmp/ext.vsix.gz
+        fi
+        ELECTRON_RUN_AS_NODE=1 {{ codium_install_dir }}/codium \
+          {{ codium_install_dir }}/resources/app/out/cli.js \
+          --install-extension /tmp/ext.vsix 2>&1 | tail -1
+        rm -f /tmp/ext.vsix /tmp/ext.vsix.gz
+      loop:
+        - ms-dotnettools.csharp
+        - ms-dotnettools.csdevkit
+      loop_control:
+        label: "{{ item }}"
+      register: ms_ext_install
+      changed_when: "'successfully' in ms_ext_install.stdout"
+      failed_when: false
+
+    - name: Clean cache and telemetry
+      ansible.builtin.shell: |
+        rm -rf "{{ codium_config_dir }}/Cache"
+        rm -rf "{{ codium_config_dir }}/CachedData"
+        rm -rf "{{ codium_config_dir }}/CachedExtensionVSIXs"
+        rm -rf "{{ codium_config_dir }}/CachedExtensions"
+        rm -rf "{{ codium_config_dir }}/Code Cache"
+        rm -rf "{{ codium_config_dir }}/GPUCache"
+        rm -rf "{{ codium_config_dir }}/logs"
+        rm -rf "{{ codium_config_dir }}/Service Worker"
+        rm -rf "{{ codium_config_dir }}/sessionStorage"
+        rm -rf "{{ codium_config_dir }}/blob_storage"
+      changed_when: false
+      failed_when: false
+
+    - name: Create desktop entry
+      ansible.builtin.copy:
+        dest: "/var/home/{{ ansible_user_id }}/.local/share/applications/codium.desktop"
+        mode: "0644"
+        content: |
+          [Desktop Entry]
+          Name=VSCodium
+          Comment=Code Editing. Redefined.
+          Exec={{ codium_install_dir }}/codium %F
+          Icon={{ codium_install_dir }}/resources/app/resources/linux/code.png
+          Type=Application
+          StartupNotify=false
+          StartupWMClass=VSCodium
+          Categories=TextEditor;Development;IDE;
+          MimeType=text/plain;inode/directory;application/x-code-workspace;
+          Actions=new-empty-window;
+          Keywords=vscode;
+
+          [Desktop Action new-empty-window]
+          Name=New Empty Window
+          Exec={{ codium_install_dir }}/codium --new-window %F
+          Icon={{ codium_install_dir }}/resources/app/resources/linux/code.png

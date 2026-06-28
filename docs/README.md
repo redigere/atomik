@@ -15,6 +15,7 @@ make apply-packages  # Install/remove packages
 make apply-security  # Apply security hardening
 make apply-desktop   # Configure desktop settings
 make apply-devtools  # Set up development tools
+make apply-extra-codium  # Install debloated VSCodium
 ```
 
 ## Security
@@ -32,6 +33,8 @@ ansible/          # Ansible playbooks + roles
 extra/kde/        # KDE theme scripts and Python tools
 extra/kde/install_nordic_kde.py  # Nordic KDE theme installer
 extra/kde/apply_kde.py           # Apply KDE panels and theme
+extra/codium/     # Debloated VSCodium setup
+extra/codium/apply_codium.py     # Install and configure VSCodium
 ```
 
 ## Reset
