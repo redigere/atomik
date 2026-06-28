@@ -100,3 +100,34 @@
   failed_when: false
   become: true
   become_user: "{{ atomik_user }}"
+
+- name: Remove bora container hook volume from user containers.conf
+  ansible.builtin.lineinfile:
+    path: "/var/home/{{ atomik_user }}/.config/containers/containers.conf"
+    regexp: '.*z-bora-container-hook.*'
+    state: absent
+  failed_when: false
+
+- name: Remove bora container hook volume from system containers.conf
+  ansible.builtin.lineinfile:
+    path: /etc/containers/containers.conf
+    regexp: '.*z-bora-container-hook.*'
+    state: absent
+  become: true
+  failed_when: false
+
+- name: Fix bora volume_path in system containers.conf
+  ansible.builtin.replace:
+    path: /etc/containers/containers.conf
+    regexp: '/var/lib/containers/storage/bora/'
+    replace: '/var/lib/containers/storage/'
+  become: true
+  failed_when: false
+
+- name: Fix bora paths in system storage-nested.conf
+  ansible.builtin.replace:
+    path: /etc/containers/storage-nested.conf
+    regexp: '/storage/bora/'
+    replace: '/storage/'
+  become: true
+  failed_when: false
