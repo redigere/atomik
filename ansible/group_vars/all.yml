@@ -801,10 +801,8 @@ atomik_swapfile_unit: |
   WantedBy=swap.target
 
 atomik_io_udev_rules: |
-  # yamllint disable rule:line-length
   ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="none", ATTR{queue/nr_requests}="64", ATTR{queue/read_ahead_kb}="256", ATTR{queue/nomerges}="2", ATTR{queue/rq_affinity}="2", ATTR{queue/iostats}="0"
   ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{queue/scheduler}="bfq", ATTR{queue/nr_requests}="64", ATTR{queue/read_ahead_kb}="256", ATTR{queue/nomerges}="2", ATTR{queue/rq_affinity}="2"
-  # yamllint enable rule:line-length
   ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/max_sectors_kb}="128"
   ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{queue/max_sectors_kb}="128"
   ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{device/queue_depth}="64"
