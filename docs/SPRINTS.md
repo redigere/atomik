@@ -1,380 +1,159 @@
 # Atomik Full-Nordic Roadmap — Sprint Operativi
 
-Roadmap per l'ecosistema desktop **Full-Nordic**: KDE Plasma 6 + GNOME 47+ con tuning estremo delle prestazioni.
-Tutti i parametri di configurazione vivono in `group_vars/all.yml`; i playbook sono puri esecutori.
-
----
+Roadmap per l'ecosistema desktop Full-Nordic: KDE Plasma 6 + GNOME 47+ con tuning estremo delle prestazioni. Tutti i parametri di configurazione vivono in group_vars/all.yml; i playbook sono puri esecutori.
 
 ## Sprint 0: Asset & Palette Unification
 
-**Obiettivo:** Definire la palette Nordic vincolante per TUTTI i componenti ed eliminare derive cromatiche.
+**Obiettivo:** Definire la palette Nordic vincolante per tutti i componenti ed eliminare derive cromatiche.
 
-| Attività | File | Dettagli |
-|---|---|---|
-| Definire palette rigida | `docs/NORDIC_PALETTE.md` | 16 colori esadecimali (nord0–nord15) + 4 tonalità frost + aurora |
-| Verificare coerenza icone | Audit `Tela-circle-nord-dark` | Sovrascrivere eventuali icone fuori palette con template SVG custom |
-| Campionare Nordic-kDE repo | `extra/kde/install_nordic_kde.py` | Estrarre i colori esatti usati da Aurorae e aggiornare palette |
-| Generare wallpaper unificato | `files/wallpaper/` | Wallpaper gradient SVG/Fluid nord + variante solida notte |
-| Audit asset esistenti | Tutti i file `.svg`, `.svgz` | Convertire a palette esatta |
+Definire palette rigida in docs/NORDIC_PALETTE.md con 16 colori esadecimali (nord0-nord15) + 4 tonalità frost + aurora. Verificare coerenza icone su Tela-circle-nord-dark. Campionare Nordic-kDE repo da extra/kde/install_nordic_kde.py. Generare wallpaper unificato in files/wallpaper/. Audit asset esistenti SVG/SVGZ.
 
-**Nordic Palette Canonica:**
-```
-nord0  #2e3440  (nero polar notte)
-nord1  #3b4252  (grigio scuro)
-nord2  #434c5e  (grigio medio)
-nord3  #4c566a  (grigio chiaro)
-nord4  #d8dee9  (bianco neve)
-nord5  #e5e9f0  (bianco tempesta)
-nord6  #eceff4  (bianco puro)
-nord7  #8fbcbb  (frost 1 - verde acqua)
-nord8  #88c0d0  (frost 2 - azzurro ghiaccio)
-nord9  #81a1c1  (frost 3 - blu ghiaccio)
-nord10 #5e81ac  (frost 4 - blu scuro)
-nord11 #bf616a  (aurora rosso)
-nord12 #d08770  (aurora arancio)
-nord13 #ebcb8b  (aurora giallo)
-nord14 #a3be8c  (aurora verde)
-nord15 #b48ead  (aurora viola)
-```
-
----
+Palette canonica: nord0 #2e3440, nord1 #3b4252, nord2 #434c5e, nord3 #4c566a, nord4 #d8dee9, nord5 #e5e9f0, nord6 #eceff4, nord7 #8fbcbb, nord8 #88c0d0, nord9 #81a1c1, nord10 #5e81ac, nord11 #bf616a, nord12 #d08770, nord13 #ebcb8b, nord14 #a3be8c, nord15 #b48ead.
 
 ## Sprint 1: KDE Foundation — Look-and-Feel Fix
 
-**Obiettivo:** Correggere le derive nel pacchetto `com.atomik.desktop` e allineare tema, icone, cursori, decorazioni.
+**Obiettivo:** Correggere le derive nel pacchetto com.atomik.desktop e allineare tema, icone, cursori, decorazioni.
 
-| Attività | File | Azione |
-|---|---|---|
-| Fix `contents/defaults` | `roles/desktop/files/look-and-feel/com.atomik.desktop/contents/defaults` | Impostare `Tela-circle-nord-dark`, `Nordic-cursors`, Aurorae Nordic |
-| Fix decorazioni finestre | `group_vars/all.yml` → `atomik_kde_theme` | Aggiungere `window_deco=Nordic`, `BorderSize=Tiny` |
-| Fix gestione Doppio Look-and-Feel | `roles/desktop/tasks/kde.yml` | Eliminare la sotto-directory `look-and-feel/` duplicata |
-| Integrare Kvantum | `group_vars/all.yml` | `widgetStyle=Kvantum`, deploy tema Kvantum Nordic |
-| Applicare Nordic-cursors in Ansible | `roles/desktop/tasks/kde.yml` | `kwriteconfig6 --file kdeglobals --group Icons --key cursorTheme Nordic-cursors` |
-| Configurare trasparenza KWin | `group_vars/all.yml` → `atomik_kde_settings` | `kwinrc/Compositing/Backend=OpenGL`, blur discreto per pannelli |
-| Pannelli: opacità e sfumatura | `files/panel-background.svg` | Renderizzare con opacità 0.25 e gradienti frost |
-| Disattivare effetti superflui | `group_vars/all.yml` | `kwinrc/Effect-*` disabilitati, solo blur + slide |
-
-### Fix specifico per `contents/defaults`:
-```
-[kdeglobals][Icons]
-Theme=Tela-circle-nord-dark
-
-[kcminputrc][Mouse]
-cursorTheme=Nordic-cursors
-
-[kwinrc][org.kde.kdecoration2]
-library=org.kde.kwin.aurorae
-theme=__aurorae__svg__Nordic
-BorderSize=Tiny
-CustomButtonPositions=true
-LeftButtons=
-RightButtons=M,S,C
-```
-
-### Nuove variabili `group_vars/all.yml`:
-```yaml
-atomik_kde_theme:
-  kinoite:
-    theme: Nordic
-    colorscheme: Nordic
-    font: Cantarell 11
-    monospace_font: Noto Sans Mono 11
-    icon_theme: Tela-circle-nord-dark
-    cursor_theme: Nordic-cursors
-    window_deco: __aurorae__svg__Nordic
-    border_size: Tiny
-    widget_style: Kvantum
-```
-
----
+Fix contents/defaults per look-and-feel con Tela-circle-nord-dark, Nordic-cursors, Aurorae Nordic. Fix decorazioni finestre in atomik_kde_theme con window_deco e BorderSize. Eliminare sotto-directory look-and-feel duplicata. Integrare Kvantum con widgetStyle. Applicare Nordic-cursors via kwriteconfig6. Configurare trasparenza KWin con Backend OpenGL e blur discreto. Pannelli con opacità 0.25 e gradienti frost. Disattivare effetti superflui KWin.
 
 ## Sprint 2: KDE Full-Nordic Polish
 
 **Obiettivo:** Perfezionare Konsole, SDDM, splash screen, notifiche, suoni.
 
-| Attività | File | Azione |
-|---|---|---|
-| Deploy profilo Konsole Nordic | `roles/desktop/tasks/kde.yml` | Aggiungere task per scrivere `Nordic.colorscheme` + `Nordic.profile` |
-| Tema SDDM Nordic | `roles/desktop/tasks/kde.yml` | Installare `Nordic-kDE` SDDM theme, configurare `/etc/sddm.conf` |
-| Disabilitare splash screen | Già fatto | `ksplashrc` Engine=none, Theme=none |
-| Tema notifiche | `group_vars/all.yml` | `knotifyrc` con Nordic palette |
-| Suoni di sistema disabilitati | `group_vars/all.yml` | `kdeglobals/ Sounds/Enabled=false` |
-| Applicare Nordic a GTK via KDE | `roles/desktop/tasks/kde.yml` | `kde-gtk-config` → GTK theme=Nordic |
-| Lock screen coerente | `group_vars/all.yml` | Tema lockscreen = Nordic, wallpaper matching |
-| Menu applicazioni stile macOS | `roles/desktop/files/panel-background.svg` | Applicare sfumatura nord ai pannelli |
-
----
+Deploy profilo Konsole Nordic con colorscheme e profile. Tema SDDM Nordic con configurazione /etc/sddm.conf. Disabilitare splash screen via ksplashrc Engine=none. Tema notifiche con knotifyrc. Suoni di sistema disabilitati. Applicare Nordic a GTK via kde-gtk-config. Lock screen coerente con tema Nordic. Menu applicazioni stile macOS con sfumatura nord ai pannelli.
 
 ## Sprint 3: GNOME Foundation — Full-Nordic GTK3/4 + Shell
 
-**Obiettivo:** Portare la parità visiva KDE → GNOME con tema GTK, Shell, GDM.
+**Obiettivo:** Portare la parità visiva KDE verso GNOME con tema GTK, Shell, GDM.
 
-| Attività | File | Azione |
-|---|---|---|
-| GTK3/4 theme Nordic | `roles/desktop/tasks/gnome.yml` | Già presente, migliorare copia asset |
-| Shell theme via user-theme | `roles/desktop/tasks/gnome.yml` | Aggiungere `gnome-shell` asset copia + gsettings |
-| GDM theme | `roles/desktop/tasks/gnome.yml` | Impostare Nordic come tema GDM via `gsettings set org.gnome.login-screen` |
-| Icone Tela-circle-nord-dark | `group_vars/all.yml` → `atomik_gnome_dconf` | Già presente, OK |
-| Cursori Nordic-cursors | `group_vars/all.yml` | Già presente |
-| Font Cantarell + Noto Mono | `group_vars/all.yml` | OK |
-| GNOME Terminal profilo Nordic | `roles/desktop/tasks/gnome.yml` | Task per creare profilo `Nordic` con palette |
-| Button layout M,S,C destra | `roles/desktop/tasks/gnome.yml` | Già presente, OK |
-| Disabilitare animazioni | `group_vars/all.yml` | Già presente, OK |
-| Dash-to-Dock tuning | `roles/desktop/tasks/gnome.yml` | Aggiungere: opacity 0.85, pressure-threshold, intellihide |
-
-### Nuove gsettings per GNOME:
-```yaml
-atomik_gnome_dconf:
-  - path: /org/gnome/desktop/interface/enable-animations
-    value: "false"
-  - path: /org/gnome/desktop/interface/icon-theme
-    value: "'Tela-circle-nord-dark'"
-  - path: /org/gnome/desktop/interface/cursor-theme
-    value: "'Nordic-cursors'"
-  - path: /org/gnome/desktop/interface/gtk-theme
-    value: "'Nordic'"
-  - path: /org/gnome/desktop/interface/font-name
-    value: "'Cantarell 11'"
-  - path: /org/gnome/desktop/interface/document-font-name
-    value: "'Cantarell 11'"
-  - path: /org/gnome/desktop/interface/monospace-font-name
-    value: "'Noto Sans Mono 11'"
-  - path: /org/gnome/desktop/wm/preferences/theme
-    value: "'Nordic'"
-  - path: /org/gnome/desktop/wm/preferences/button-layout
-    value: "':minimize,maximize,close'"
-  - path: /org/gnome/shell/extensions/user-theme/name
-    value: "'Nordic'"
-```
-
----
+GTK3/4 theme Nordic. Shell theme via user-theme. GDM theme con Nordic. Icone Tela-circle-nord-dark. Cursori Nordic-cursors. Font Cantarell + Noto Mono. GNOME Terminal profilo Nordic con palette. Button layout M,S,C destra. Disabilitare animazioni. Dash-to-Dock tuning con opacity pressure-threshold intellihide.
 
 ## Sprint 4: GNOME Full-Nordic Polish
 
 **Obiettivo:** Estensioni, GDM, Terminale, suoni, Dconf completo.
 
-| Attività | File | Azione |
-|---|---|---|
-| Dash-to-Dock configurazione | `roles/desktop/tasks/gnome.yml` | Dock BOTTOM, extend-height=false, icon-size=64, pressure-threshold, intellihide |
-| GNOME Terminal profilo | `roles/desktop/tasks/gnome.yml` | `dconf write /org/gnome/terminal/legacy/profiles:` con palette Nordic |
-| Disabilitare tracker/miner | `group_vars/all.yml` → nuovo `atomik_gnome_dconf` | `tracker disable`, `privacy/disable-external=true` |
-| GDM tema | `roles/desktop/tasks/gnome.yml` | Copiare Nordic in `/usr/share/gnome-shell/` + gdm settings |
-| Disabilitare suoni evento | `group_vars/all.yml` | `sound/event-sounds=false` |
-| Schermata di blocco | `group_vars/all.yml` | Wallpaper Nordic + orologio 24h |
-| Night Light | `group_vars/all.yml` | `night-light-enabled=true`, temp 3800K |
-| Estensioni consigliate | `group_vars/all.yml` → `atomik_flatpak_verified` | Dash-to-Dock, User-Themes, GSConnect (opzionale) |
-| Accent color | `group_vars/all.yml` | `accent-color='blue'` → nord8 |
-
----
+Dash-to-Dock configurazione dock BOTTOM extend-height false icon-size 64 pressure-threshold intellihide. GNOME Terminal profilo con palette Nordic. Disabilitare tracker miner. GDM tema Nordic. Disabilitare suoni evento. Schermata di blocco con wallpaper Nordic. Night Light temperatura 3800K. Estensioni Dash-to-Dock User-Themes GSConnect. Accent color blue nord8.
 
 ## Sprint 5: Cross-DE Consistency
 
 **Obiettivo:** Garanzia di coerenza visiva assoluta tra KDE e GNOME.
 
-| Attività | Dettagli |
-|---|---|
-| Audit palette incrociato | Confrontare ogni elemento visivo KDE ↔ GNOME, tabella di corrispondenza |
-| Wallpaper unico | Stesso wallpaper per SDDM/GDM/KDE/GNOME |
-| Icone | Stessa Tela-circle-nord-dark su entrambi |
-| Cursori | Nordic-cursors su entrambi (con fallback Adwaita) |
-| Font | Cantarell 11 UI + Noto Sans Mono 11 terminale |
-| Finestre | Button M,S,C destra, bordi 0px, ombre coerenti |
-| Pannelli/Dock | Opacità 0.25 con sfumatura frost, autohide |
-| Terminale | Palette nord identica (Konsole ↔ GNOME Terminal) |
-| Suoni | Disabilitati su entrambi |
-| Animazioni | Disabilitate su entrambi (massima reattività) |
-
----
+Audit palette incrociato KDE vs GNOME. Wallpaper unico per SDDM GDM KDE GNOME. Icone Tela-circle-nord-dark su entrambi. Cursori Nordic-cursors con fallback Adwaita. Font Cantarell 11 UI + Noto Sans Mono 11 terminale. Finestre button M,S,C destra bordi 0px ombre coerenti. Pannelli dock opacità 0.25 con sfumatura frost autohide. Terminale palette nord identica Konsole vs GNOME Terminal. Suoni disabilitati su entrambi. Animazioni disabilitate su entrambi.
 
 ## Sprint 6: Extreme Kernel Tuning
 
 **Obiettivo:** Configurazione kernel più aggressiva possibile per desktop a bassa latenza.
 
-| Attività | Parametro | Valore |
-|---|---|---|
-| GRUB: mitigazioni CPU off | `mitigations=off` | Disabilita mitigazioni spettro per ~5-15% performance |
-| GRUB: nowatchdog | `nowatchdog` | Disabilita NMI watchdog (già in tuned) |
-| GRUB: nohz_full | `nohz_full=2-{n-1}` | Tickless sui core non-boot (riduce interruzioni) |
-| GRUB: rcu_nocbs | `rcu_nocbs=2-{n-1}` | RCU callback offloading |
-| GRUB: processor.max_cstate=1 | C-states minimi | Riduce latenza wake-up |
-| GRUB: intel_idle.max_cstate=0 | Idle disabilitato | Massima reattività (tradeoff energia) |
-| GRUB: skew_tick=1 | `skew_tick=1` | Evita thundering herd timer |
-| sysctl: sched_autogroup | già 0 | Disabilitato |
-| sysctl: preempt | FULL (RT) | `CONFIG_PREEMPT_FULL` (se supportato) |
-| sysctl: perf_cpu_time_max_percent=1 | Riduce overhead profiling | Già predisposto |
-
-### Nuovo task GRUB: `roles/security/tasks/grub.yml`
-```yaml
-- name: Deploy GRUB tuning
-  ansible.builtin.copy:
-    content: |
-      GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX mitigations=off nowatchdog nohz_full=2-{{ ansible_processor_cores - 1 }} rcu_nocbs=2-{{ ansible_processor_cores - 1 }} processor.max_cstate=1 intel_idle.max_cstate=0 skew_tick=1"
-    dest: /etc/default/grub.d/99-atomik-performance.cfg
-    owner: root
-    group: root
-    mode: "0644"
-  notify: Rebuild grub
-```
-
----
+GRUB mitigazioni CPU off per 5-15% performance. nowatchdog disabilita NMI watchdog. nohz_full sui core non-boot per ridurre interruzioni. rcu_nocbs per RCU callback offloading. processor.max_cstate=1 per C-states minimi. intel_idle.max_cstate=0 idle disabilitato. skew_tick=1 evita thundering herd timer. sysctl sched_autogroup=0. preempt FULL RT se supportato. perf_cpu_time_max_percent=1.
 
 ## Sprint 7: Memory & Storage Warp
 
 **Obiettivo:** Spingere RAM, ZRAM e I/O al limite massimo.
 
-| Attività | File | Modifica |
-|---|---|---|
-| ZRAM: zram-size = ram | `group_vars/all.yml` | `zram-size = ram` (da `ram / 2`) — più spazio compresso |
-| ZRAM: algorithm = zstd | OK | Già zstd |
-| THP defrag = never | `group_vars/all.yml` | `defer` → `never` (evita stall) |
-| VM dirty_ratio = 5 | OK | Già 5 |
-| VM dirty_background = 2 | `group_vars/all.yml` | 5 → 2 (più aggressivo) |
-| VM swappiness = 5 | `group_vars/all.yml` | 10 → 5 (solo swap compresso) |
-| VM watermark_scale = 150 | `sysctl_dynamic.conf.j2` | 125 → 150 (più memoria libera) |
-| min_free_kbytes = 1.5% RAM | `sysctl_dynamic.conf.j2` | 2% → 1.5% |
-| IO: kyber per NVMe | OK | Già kyber |
-| IO: BFQ per SATA | OK | Già BFQ |
-| IO: add nr_requests=2048 | `group_vars/all.yml` → `atomik_io_udev_rules` | `queue/nr_requests=2048` |
-| IO: add read_ahead_kb=4096 | `group_vars/all.yml` → `atomik_io_udev_rules` | `queue/read_ahead_kb=4096` |
-| NOATIME su tutte le partizioni | `roles/security/tasks/io.yml` | Già fatto |
-| Disabilitare swap file | `group_vars/all.yml` | Opzionale: solo ZRAM è sufficiente |
-
-### Nuovo udev rules avanzato:
-```
-ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="kyber", ATTR{queue/nr_requests}="2048", ATTR{queue/read_ahead_kb}="4096"
-ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{queue/scheduler}="bfq", ATTR{queue/nr_requests}="2048", ATTR{queue/read_ahead_kb}="4096"
-```
-
----
+ZRAM zram-size raddoppiato. THP defrag never per evitare stall. VM dirty_ratio e dirty_background più aggressivi. swappiness a 5. watermark_scale a 150. min_free_kbytes 1.5% RAM. IO kyber per NVMe BFQ per SATA. nr_requests 2048. read_ahead_kb 4096. NOATIME su tutte le partizioni. Swap file disabilitabile.
 
 ## Sprint 8: GPU & Rendering Latency
 
 **Obiettivo:** Minima latenza di rendering possibile su Wayland.
 
-| Attività | Configurazione |
-|---|---|
-| KWin: Backend=OpenGL | Già fatto |
-| KWin: blur = false (KDE) | Già fatto |
-| KWin: OpenGLIsUnsafe=true | Già fatto (wayland native) |
-| KWin: MaxFps=144/240 | `group_vars/all.yml`: `kwinrc/Compositing/MaxFps=144` |
-| GNOME: disabilitare blur | Già animazioni=false |
-| Mutter: tuning sperimentale | `mutter experimental-features=['scale-monitor-framebuffer']` (se supportato) |
-| Disabilitare VSync (se GSync/FreeSync) | `kwinrc/Compositing/VSync=none` |
-| GPU scheduler: RT priority | Già fatto (desktop_scheduler) |
-| Intel: enable_psr=0 (evita flicker) | `i915.enable_psr=0` in GRUB |
-| AMD: amdgpu.sched_jobs=1024 | GRUB parametro |
-| NVIDIA: nvidia.NVreg_EnableGpuFirmware=0 | GRUB parametro |
-| Wayland: ridurre buffer count | `KWIN_DRM_BUFFER_COUNT=2` |
-
----
+KWin Backend OpenGL blur false OpenGLIsUnsafe true MaxFps 144. GNOME animazioni false. Disabilitare VSync se GSync FreeSync. GPU scheduler RT priority. Intel enable_psr=0. AMD amdgpu.sched_jobs. NVIDIA NVreg_EnableGpuFirmware=0. KWIN_DRM_BUFFER_COUNT=2.
 
 ## Sprint 9: Network & Audio Latency
 
 **Obiettivo:** Latenza di rete e audio minima per applicazioni real-time.
 
-| Attività | File | Valore |
-|---|---|---|
-| Network: net.core.rmem_max | `group_vars/all.yml` → `atomik_sysctl` | 16777216 |
-| Network: net.core.wmem_max | `group_vars/all.yml` | 16777216 |
-| Network: net.ipv4.tcp_congestion_control=bbr | `group_vars/all.yml` | bbr (se modulo caricato) |
-| Network: net.core.default_qdisc=fq | `group_vars/all.yml` | fq (fair queue) |
-| Network: disable IPv6 | Opzionale | Se non serve, `disable_ipv6=1` |
-| Audio: RT priority per PipeWire | `roles/security/tasks/oomd.yml` | Aggiungere a `atomik_oomd_protected_services` |
-| Audio: ALSA buffer size=64 | `group_vars/all.yml` → tuned.conf | 128 → 64 |
-| Audio: disabilitare power-save | `/etc/modprobe.d/alsa-power.conf` | `options snd_hda_intel power_save=0` |
-| Bluetooth: disabilitare (se non usato) | `group_vars/all.yml` | `atomik_rpm_remove` + systemd mask |
-| WiFi power-save off | `roles/security/tasks/network.yml` | `iw dev wlan0 set power_save off` |
-
----
+rmem_max 16777216 wmem_max 16777216. tcp_congestion_control bbr. default_qdisc fq. IPv6 disabilitabile. RT priority per PipeWire. ALSA buffer size 64. Disabilitare power-save audio. Bluetooth disabilitabile. WiFi power_save off.
 
 ## Sprint 10: Service Minimization & Bloat Removal
 
-**Obiettivo:** Disabilitare ogni demone/servizio non indispensabile.
+**Obiettivo:** Disabilitare ogni demone o servizio non indispensabile.
 
-| Servizio | Azione | Note |
-|---|---|---|
-| abrtd / abrt-journal-core | mask | Crash reporting non necessario |
-| packagekit | mask | Immutabile, rpm-ostree gestisce |
-| fwupd | mask | Update firmware (se non serve) |
-| cups / cups-browsed | mask | Se nessuna stampante |
-| bluetooth | mask | Se nessun BT |
-| NetworkManager-wait-online | mask | Ritarda boot |
-| gssproxy / rpcbind | mask | Se no NFS |
-| pmlogger / pmie | mask | Se no Performance Co-Pilot |
-| racoon / ipsec | mask | Se no VPN |
-| fedora-policy | mask | Su Atomic |
-| systemd-resolved | mask | Se si usa NetworkManager |
-| upower | mask | Se desktop fisso |
-| geoclue | mask | Servizio posizione |
-| ModemManager | mask | Se no modem cellulare |
-| colord | mask | Se no profili colore |
-| accounts-daemon | mask | Su Atomic non serve |
-
-### Nuovo task: `roles/security/tasks/mask_services.yml`
-```yaml
-- name: Mask non-essential services
-  ansible.builtin.systemd:
-    name: "{{ item }}"
-    state: masked
-    enabled: false
-    masked: true
-  loop: "{{ atomik_masked_services }}"
-```
-
----
+Mask abrtd abrt-journal-core packagekit cups cups-browsed bluetooth NetworkManager-wait-online gssproxy rpcbind pmlogger pmie racoon ipsec fedora-policy upower geoclue ModemManager colord accounts-daemon.
 
 ## Sprint 11: Integration & Stress Testing
 
 **Obiettivo:** Verificare che ogni modifica sia applicata correttamente senza regressioni.
 
-| Attività | Comando / Script |
-|---|---|
-| Verifica sysctl | `sysctl -a | grep atomik` |
-| Verifica ZRAM | `zramctl`, `swapon --show` |
-| Verifica OOMD | `systemctl status systemd-oomd` |
-| Verifica tuned | `tuned-adm active`, `tuned-adm verify` |
-| Verifica scheduler | `chrt -p $(pidof kwin_wayland)` → RR |
-| Verifica IO scheduler | `cat /sys/block/nvme0n1/queue/scheduler` |
-| Verifica THP | `cat /sys/kernel/mm/transparent_hugepage/enabled` |
-| Verifica temi KDE | `kreadconfig6 --file kdeglobals --group General --key ColorScheme` |
-| Verifica temi GNOME | `gsettings get org.gnome.desktop.interface gtk-theme` |
-| Stress test memoria | `stress-ng --vm 2 --vm-bytes 80% -t 30` |
-| Latenza | `cyclictest` (se rt-tools installato) |
-| Benchmark I/O | `fio --randwrite --ioengine=libaio --size=1G` |
-| verifica YAML lint | `yamllint ansible/` |
-
----
+Verifica sysctl, ZRAM, OOMD, tuned, scheduler, IO scheduler, THP, temi KDE e GNOME. Stress test memoria con stress-ng. Latenza con cyclictest. Benchmark I/O con fio. YAML lint.
 
 ## Sprint 12: Documentation & Release
 
 **Obiettivo:** Documentare ogni parametro e rilasciare la versione Full-Nordic.
 
-| Attività | File |
-|---|---|
-| Tabella parametri tuning | `docs/TUNING.md` — ogni parametro spiegato |
-| Guida temi Full-Nordic | `docs/THEMING.md` — palette, font, icone |
-| Esempi make target | `Makefile` + `README.md` |
-| Changelog v2.0 | `CHANGELOG.md` |
-| Video dimostrativo | Opzionale |
+Tabella parametri tuning in docs/TUNING.md. Guida temi Full-Nordic in docs/THEMING.md. Esempi make target in Makefile e README.md. Changelog v2.0 in CHANGELOG.md.
 
----
+## Anti-Lag Sprint AL0: VM & Memory Baseline Hardening
+
+**Obiettivo:** Eliminare i micro-freeze causati da writeback ritardato e frammentazione di pagina.
+
+dirty_background_ratio da 2 a 1 per avviare scrittura sporca prima. dirty_ratio da 5 a 3 per hard limite writeback più basso. dirty_expire_centisecs da 3000 a 500 per scrivere dati vecchi in 5 secondi. dirty_writeback_centisecs da 500 a 100 per pdflush ogni 1 secondo. swappiness da 5 a 1 per swap solo sotto pressione estrema. vfs_cache_pressure da 50 a 100 per reclaim VFS cache più aggressivo. Aggiunto watermark_low_factor=200 per più pagine libere riservate. min_free_kbytes al 3% della RAM (era 1.5%). admin_reserve_kbytes all'1% della RAM (era 0.5%). Aggiunto user_reserve_kbytes all'1% della RAM. Aggiunto extfrag_threshold=100 per ridurre frammentazione. Aggiunto reclaim_clean_pages=1 per reclaim pagine pulite immediate.
+
+## Anti-Lag Sprint AL1: OOMD Aggressivo
+
+**Obiettivo:** Reagire alla pressione di memoria in millisecondi, non in secondi.
+
+SwapUsedLimit da 50% a 10% per reagire a minima pressione swap. DefaultMemoryPressureLimit da 20% a 5% per soglia pressione molto più bassa. DefaultMemoryPressureDurationSec da 2 secondi a 500 millisecondi per reazione in mezzo secondo. ManagedOOMMemoryPressureLimit su user.slice a 10%. ManagedOOMMemoryPressureLimit su servizi protetti a 50%.
+
+Nuove variabili in group_vars/all.yml: atomik_oomd_config con SwapUsedLimit 10% DefaultMemoryPressureLimit 5% DefaultMemoryPressureDurationSec 500ms. atomik_oomd_user_slice con ManagedOOMMemoryPressure kill ManagedOOMMemoryPressureLimit 10% ManagedOOMSwap kill.
+
+## Anti-Lag Sprint AL2: Cgroup & Slice Memory Limits
+
+**Obiettivo:** Prevenire OOM killer e freeze mettendo limiti di memoria massimi per slice.
+
+user.slice MemoryHigh al 75% della RAM. user.slice MemoryMax al 90% della RAM. user.slice TasksMax a 4096. Servizi protetti MemoryHigh infinity TasksMax 8192. Compositor CPU Shares a 4096. App CPU Shares a 1024.
+
+Nuove task in roles/security/tasks/oomd.yml per deploy user slice memory limits protected service cgroup limits e compositor CPU weight.
+
+## Anti-Lag Sprint AL3: ZRAM & Swap Pressure
+
+**Obiettivo:** Massimizzare spazio compresso e ridurre latenza di decompressione.
+
+zram0 size da ram moltiplicato 1.5 a ram moltiplicato 2. zram1 size da ram diviso 4 a ram diviso 2. zram1 algorithm da lz4 a lzo-rle per migliore compressione. same-page-compression abilitato per evitare duplicati in RAM.
+
+## Anti-Lag Sprint AL4: GRUB Estremo Low-Latency
+
+**Obiettivo:** Parametri kernel più aggressivi per eliminare latenze spurie.
+
+rcu_nocb_poll per polling RCU callbacks. oops=panic panic=1 per reboot immediato su oops. audit_backlog_limit=0 per disabilitare audit. intel_pstate=active e amd_pstate=active per miglior scaling frequency. idle=nomwait per disabilitare MWAIT. mce=ignore per ignorare MCE. pcie_aspm=off per disabilitare ASPM. modprobe.blacklist=mei,mei_me,mei_hdcp per blacklist ME.
+
+## Anti-Lag Sprint AL5: CPU Scheduler & Real-Time Priority
+
+**Obiettivo:** Compositor e servizi audio con priorità FIFO o RT.
+
+Compositor CPUSchedulingPolicy fifo. Compositor CPUSchedulingPriority 99. Compositor Nice -15. Compositor CPUAffinity 0-3.
+
+## Anti-Lag Sprint AL6: I/O Storage Latency Zero
+
+**Obiettivo:** Nessuna latenza I/O bloccante.
+
+NVMe scheduler da kyber a none per zero overhead scheduling. NVMe nr_requests da 2048 a 64 per coda minima. NVMe nomerges=2 per nessun merge I/O. NVMe rq_affinity=2 per affinità CPU. NVMe iostats=0 per zero overhead statistiche. NVMe max_sectors_kb da 4096 a 128 per trasferimenti piccoli. NVMe queue_depth=64 per profondità coda minima. SATA BFQ confermato. SATA nr_requests da 2048 a 64.
+
+## Anti-Lag Sprint AL7: GPU & Compositor Warp
+
+**Obiettivo:** Zero glitch di composizione.
+
+KWIN_DRM_SCHEDULER_ENABLED=1 per scheduling GPU via kernel. KWIN_DRM_SCHEDULER_PRIORITY=realtime per priorità RT GPU. KWIN_DRM_NO_AMS=1 per disabilitare Adaptive Sync. MUTTER_DEBUG_DISABLE_VBLANK=1 per GNOME senza VBlank sync. __GL_MaxFramesAllowed=1 per NVIDIA max 1 frame in flight. AMD amdgpu.sched_jobs=4096 e amdgpu.ras=0. Intel i915.enable_fbc=0 disable_power_well=1 enable_rc6=0 enable_dc=0. NVIDIA NVreg_UsePageAttributeTable=1 e NVreg_RegistryDwords RMIntrLock=0.
+
+## Anti-Lag Sprint AL8: App Nap Proattivo
+
+**Obiettivo:** Freezare immediatamente le app in background prima che causino pressione memoria.
+
+Interval da 1 secondo a 500 millisecondi per doppia frequenza di controllo. Reclaim percent da 10% a 25% per riciclo più aggressivo. Memory.max enforcement al 200% del current come hard cap su ogni cgroup. Retry su scrittura cgroup con 3 tentativi per evitare errori transienti. Memory pressure detection da memory.pressure maggiore di 5% come early warning.
+
+## Anti-Lag Sprint AL9: Tuned & Khugepaged Tuning
+
+**Obiettivo:** Minimo overhead di allocazione pagine e defrag.
+
+min_perf_pct da 25 a 100 per CPU sempre al massimo. force_latency=1 per latenza forzata minima. alsa_buffer_size da 64 a 32 per buffer ALSA minimo. alsa_period_size=128 per periodo ALSA minimo. sched_migration_cost_ns da 500000 a 250000 per migrazioni più rapide. sched_min_granularity_ns da 3000000 a 1500000 per granularità scheduling doppia. sched_wakeup_granularity_ns da 4000000 a 2000000 per wakeup più veloce. khugepaged alloc_sleep_millisecs 10000 scan_sleep_millisecs 10000 per THP scan meno frequente. khugepaged max_ptes_none 512 per THP più selettivo. shmem_enabled never per nessun THP su shared memory. use_zero_page 0 per disabilitare zero page.
+
+## Anti-Lag Sprint AL10: Journald & Logging Latency
+
+**Obiettivo:** Zero attese per scrittura log.
+
+RateLimitIntervalSec 0 per nessun rate limit. RateLimitBurst 0 per nessun burst limit. SyncIntervalSec 5 minuti per sync ridotto. ForwardToSyslog no per nessun forward. ForwardToWall no per nessun wall message.
 
 ## Cronologia Sprint
 
-| Sprint | Durata | Dipende da |
-|---|---|---|
-| 0 — Asset & Palette | 1g | — |
-| 1 — KDE Foundation | 2g | Sprint 0 |
-| 2 — KDE Polish | 2g | Sprint 1 |
-| 3 — GNOME Foundation | 2g | Sprint 0 |
-| 4 — GNOME Polish | 2g | Sprint 3 |
-| 5 — Cross-DE Consistency | 1g | Sprint 2,4 |
-| 6 — Extreme Kernel | 2g | — |
-| 7 — Memory & Storage | 1g | Sprint 6 |
-| 8 — GPU & Rendering | 1g | Sprint 6 |
-| 9 — Network & Audio | 1g | Sprint 6 |
-| 10 — Service Minimization | 1g | — |
-| 11 — Integration Testing | 2g | Sprint 5,10 |
-| 12 — Documentation | 2g | Sprint 11 |
+Sprint 0 Asset & Palette 1 giorno senza dipendenze. Sprint 1 KDE Foundation 2 giorni dipende da Sprint 0. Sprint 2 KDE Polish 2 giorni dipende da Sprint 1. Sprint 3 GNOME Foundation 2 giorni dipende da Sprint 0. Sprint 4 GNOME Polish 2 giorni dipende da Sprint 3. Sprint 5 Cross-DE Consistency 1 giorno dipende da Sprint 2 e 4. Sprint 6 Extreme Kernel 2 giorni senza dipendenze. Sprint 7 Memory & Storage 1 giorno dipende da Sprint 6. Sprint 8 GPU & Rendering 1 giorno dipende da Sprint 6. Sprint 9 Network & Audio 1 giorno dipende da Sprint 6. Sprint 10 Service Minimization 1 giorno senza dipendenze. Sprint 11 Integration Testing 2 giorni dipende da Sprint 5 e 10. Sprint 12 Documentation 2 giorni dipende da Sprint 11. AL0 VM Memory Baseline 1 giorno dipende da Sprint 6 e 7. AL1 OOMD Aggressivo 1 giorno dipende da AL0. AL2 Cgroup Slice Limits 1 giorno dipende da AL1. AL3 ZRAM Tuning 1 giorno dipende da AL0. AL4 GRUB Low-Latency 1 giorno dipende da Sprint 6. AL5 CPU RT Priority 1 giorno dipende da AL4. AL6 I/O Latency 1 giorno dipende da AL0. AL7 GPU Compositor 1 giorno dipende da AL4. AL8 App Nap Proattivo 1 giorno dipende da AL2. AL9 Tuned Khugepaged 1 giorno dipende da AL0. AL10 Journald Tuning 1 giorno senza dipendenze.
 
-**Totale: ≈ 20 giorni lavorativi**
+Totale Full-Nordic circa 20 giorni più 10 giorni Anti-Lag per un totale di 30 giorni lavorativi.

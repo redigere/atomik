@@ -489,7 +489,7 @@ atomik_rpm_install:
   - firewalld
   - powertop
   - zram-generator
-  - brave-browser
+  - brave-origin
   - host-spawn
   - fish
   - util-linux-user
@@ -633,21 +633,25 @@ atomik_sysctl:
           disable_ipv6: 0
   vm:
     compaction_proactiveness: 0
-    dirty_background_ratio: 2
-    dirty_expire_centisecs: 3000
-    dirty_ratio: 5
-    dirty_writeback_centisecs: 500
+    compact_unevictable_allowed: 0
+    dirty_background_ratio: 1
+    dirty_expire_centisecs: 500
+    dirty_ratio: 3
+    dirty_writeback_centisecs: 100
     dirtytime_expire_seconds: 200
+    extfrag_threshold: 100
     max_map_count: 2147483642
     overcommit_memory: 1
     overcommit_ratio: 50
     page_cluster: 0
     page_lock_unfairness: 1
     panic_on_oom: 0
-    stat_interval: 10
-    swappiness: 5
-    vfs_cache_pressure: 50
+    reclaim_clean_pages: 1
+    stat_interval: 5
+    swappiness: 1
+    vfs_cache_pressure: 100
     watermark_boost_factor: 0
+    watermark_low_factor: 200
     zone_reclaim_mode: 0
 
 atomik_limits:
@@ -678,20 +682,48 @@ atomik_permissions:
 
 atomik_oomd_config: |
   [OOM]
-  SwapUsedLimit=50%
-  DefaultMemoryPressureLimit=20%
-  DefaultMemoryPressureDurationSec=2s
+  SwapUsedLimit=10%
+  DefaultMemoryPressureLimit=5%
+  DefaultMemoryPressureDurationSec=500ms
 
 atomik_oomd_user_slice: |
   [Service]
   ManagedOOMMemoryPressure=kill
+  ManagedOOMMemoryPressureLimit=10%
   ManagedOOMSwap=kill
 
 atomik_oomd_protected_config: |
   [Service]
   ManagedOOMMemoryPressure=kill
+  ManagedOOMMemoryPressureLimit=50%
   ManagedOOMSwap=kill
   OOMScoreAdjust=-1000
+
+atomik_cgroup_user_slice: |
+  [Slice]
+  MemoryHigh=75%
+  MemoryMax=90%
+  TasksMax=4096
+
+atomik_cgroup_protected_default: |
+  [Service]
+  MemoryHigh=infinity
+  MemoryMax=infinity
+  TasksMax=8192
+
+atomik_cgroup_app_slice: |
+  [Slice]
+  MemoryHigh=50%
+  MemoryMax=75%
+  TasksMax=2048
+
+atomik_cgroup_cpu_weight_compositor: |
+  [Service]
+  CPUShares=4096
+
+atomik_cgroup_cpu_weight_app: |
+  [Service]
+  CPUShares=1024
 
 atomik_oomd_protected_services:
   silverblue:
@@ -727,15 +759,20 @@ atomik_desktop_scheduler_services:
 
 atomik_zram_config: |
   [zram0]
-  zram-size = ram * 1.5
+  zram-size = ram * 2
   compression-algorithm = zstd
   swap-priority = 100
   fs-type = swap
+  same-page-compression = true
   [zram1]
-  zram-size = ram / 4
-  compression-algorithm = lz4
+  zram-size = ram / 2
+  compression-algorithm = lzo-rle
   swap-priority = 50
   fs-type = swap
+  same-page-compression = true
+
+atomik_zram_udev_rules: |
+  ACTION=="add", KERNEL=="zram[0-9]*", ATTR{comp_algorithm}="zstd lzo-rle lz4", ATTR{max_comp_streams}="$(nproc)", ATTR{writeback_limit}="0"
 
 atomik_swapfile_service: |
   [Unit]
@@ -764,15 +801,22 @@ atomik_swapfile_unit: |
   WantedBy=swap.target
 
 atomik_io_udev_rules: |
-  ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="kyber", ATTR{queue/nr_requests}="2048", ATTR{queue/read_ahead_kb}="4096"
-  ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{queue/scheduler}="bfq", ATTR{queue/nr_requests}="2048", ATTR{queue/read_ahead_kb}="4096"
-  ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/max_sectors_kb}="4096"
-  ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{queue/max_sectors_kb}="1024"
+  ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="none", ATTR{queue/nr_requests}="64", ATTR{queue/read_ahead_kb}="256", ATTR{queue/nomerges}="2", ATTR{queue/rq_affinity}="2", ATTR{queue/iostats}="0"
+  ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{queue/scheduler}="bfq", ATTR{queue/nr_requests}="64", ATTR{queue/read_ahead_kb}="256", ATTR{queue/nomerges}="2", ATTR{queue/rq_affinity}="2"
+  ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/max_sectors_kb}="128"
+  ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{queue/max_sectors_kb}="128"
+  ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{device/queue_depth}="64"
+  ACTION=="add|change", KERNEL=="sd[a-z]|mmcblk[0-9]*", ATTR{device/queue_depth}="32"
 
 atomik_thp_tmpfiles: |
   w /sys/kernel/mm/transparent_hugepage/enabled - - - - always
   w /sys/kernel/mm/transparent_hugepage/defrag - - - - never
   w /sys/kernel/mm/transparent_hugepage/khugepaged/defrag - - - - 0
+  w /sys/kernel/mm/transparent_hugepage/khugepaged/alloc_sleep_millisecs - - - - 10000
+  w /sys/kernel/mm/transparent_hugepage/khugepaged/scan_sleep_millisecs - - - - 10000
+  w /sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none - - - - 512
+  w /sys/kernel/mm/transparent_hugepage/shmem_enabled - - - - never
+  w /sys/kernel/mm/transparent_hugepage/use_zero_page - - - - 0
 
 atomik_desktop_scheduler_config: |
   [Service]
@@ -780,9 +824,22 @@ atomik_desktop_scheduler_config: |
   IOSchedulingClass=realtime
   IOSchedulingPriority=0
   CPUSchedulingPolicy=rr
-  CPUSchedulingPriority=2
-  CPUAffinity=0-1
-  Nice=-10
+  CPUSchedulingPriority=4
+  CPUAffinity=0-3
+  Nice=-15
+  MemoryHigh=infinity
+  MemoryMax=infinity
+  TasksMax=16384
+
+atomik_desktop_scheduler_config_rt: |
+  [Service]
+  CPUSchedulingPolicy=fifo
+  CPUSchedulingPriority=99
+  CPUAccounting=yes
+  MemoryAccounting=yes
+  IOAccounting=yes
+  TasksAccounting=yes
+  IPAccounting=yes
 
 atomik_default_shell: /usr/bin/fish
 atomik_gnome_dconf:
@@ -1048,8 +1105,6 @@ atomik_masked_services:
   - cups
   - cups-browsed
   - fedora-policy
-  - fwupd
-  - fwupd-refresh.timer
   - geoclue
   - gssproxy
   - ModemManager
@@ -1060,8 +1115,6 @@ atomik_masked_services:
   - pmlogger
   - rpcbind
   - rpc-statd
-  - systemd-resolved
-  - upower
 
 atomik_alsa_power_save: |
   options snd_hda_intel power_save=0
@@ -1072,8 +1125,19 @@ atomik_kde_environment: |
   KWIN_DRM_DISABLE_TRIPLE_BUFFERING=1
   KWIN_WAYLAND_NO_SUSPEND=1
   KWIN_WAYLAND_SERVER_LOGGING=false
+  KWIN_DRM_SCHEDULER_ENABLED=1
+  KWIN_DRM_SCHEDULER_PRIORITY=realtime
+  KWIN_DRM_NO_AMS=1
+  KWIN_DRM_NO_AMS_FALLBACK=1
   QT_QUICK_BACKEND=software
   QT_AUTO_SCREEN_SCALE_FACTOR=0
+
+atomik_gnome_environment: |
+  MUTTER_DEBUG_DISABLE_VBLANK=1
+  MUTTER_DEBUG_FORCE_KMS_MODE=simple
+  CLUTTER_BACKEND=wayland
+  CLUTTER_SHOW_FPS=0
+  __GL_MaxFramesAllowed=1
 
 atomik_nordic_palette:
   nord0: "#2e3440"
