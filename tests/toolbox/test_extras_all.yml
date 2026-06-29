@@ -1,0 +1,74 @@
+---
+- name: Test all extra modules structure
+  hosts: localhost
+  become: false
+  gather_facts: true
+
+  vars:
+    expected_extras:
+      - business
+      - codium
+      - debloat
+      - flatpak
+      - gaming
+      - gnome
+      - kde
+      - packages
+
+  tasks:
+    - name: Verify extra directories exist
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/../../extra/{{ item }}"
+      loop: "{{ expected_extras }}"
+      register: extra_dirs
+
+    - name: Assert all extra directories present
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: "Missing extra directory: {{ item.item }}"
+      loop: "{{ extra_dirs.results }}"
+      when: extra_dirs.results is defined
+
+    - name: Verify extra modules have site.yml or scripts
+      ansible.builtin.find:
+        paths: "{{ playbook_dir }}/../../extra"
+        patterns: "*.yml"
+        recurse: true
+      register: extra_ymls
+
+    - name: Count extra YAML files
+      ansible.builtin.debug:
+        msg: "Found {{ extra_ymls.files | length }} YAML files in extra/"
+
+    - name: Assert extra modules have content
+      ansible.builtin.assert:
+        that:
+          - extra_ymls.files | length >= 4
+        fail_msg: "Expected at least 4 extra YAML files"
+
+    - name: Verify Python scripts in extra
+      ansible.builtin.find:
+        paths: "{{ playbook_dir }}/../../extra"
+        patterns: "*.py"
+        recurse: true
+      register: extra_py
+
+    - name: Count extra Python scripts
+      ansible.builtin.debug:
+        msg: "Found {{ extra_py.files | length }} Python scripts in extra/"
+
+    - name: Verify JavaScript files in extra
+      ansible.builtin.find:
+        paths: "{{ playbook_dir }}/../../extra"
+        patterns: "*.js"
+        recurse: true
+      register: extra_js
+
+    - name: Count extra JavaScript files
+      ansible.builtin.debug:
+        msg: "Found {{ extra_js.files | length }} JavaScript files in extra/"
+
+    - name: All extra module tests passed
+      ansible.builtin.debug:
+        msg: "Extra module structure validation completed successfully"

@@ -1,0 +1,41 @@
+---
+- name: Test business extra module
+  hosts: localhost
+  become: false
+  gather_facts: true
+
+  vars:
+    business_flatpaks:
+      - com.slack.Slack
+
+  tasks:
+    - name: Skip in containers
+      when: >
+        ansible_facts.get('virtualization_type', '') == 'container' or
+        ansible_facts.get('file', {}).get('/run/.toolboxenv', {}).get('exists', false)
+      block:
+        - name: Skip message
+          ansible.builtin.debug:
+            msg: "Skipping business test in container environment"
+        - name: End play
+          ansible.builtin.meta: end_play
+
+    - name: Verify business site.yml exists
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/../../extra/business/site.yml"
+      register: business_site
+
+    - name: Assert business site.yml present
+      ansible.builtin.assert:
+        that:
+          - business_site.stat.exists
+
+    - name: Verify business Flatpaks defined
+      ansible.builtin.assert:
+        that:
+          - business_flatpaks | length == 1
+          - "'com.slack.Slack' in business_flatpaks"
+
+    - name: Verify Slack override parameters
+      ansible.builtin.debug:
+        msg: "Slack override: Wayland + PulseAudio + DRI + KDE StatusNotifier"

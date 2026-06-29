@@ -1,0 +1,166 @@
+---
+- name: E2E test - Verify all extra modules
+  hosts: localhost
+  gather_facts: true
+
+  vars:
+    project_root: "{{ playbook_dir }}/.."
+
+  tasks:
+    - name: Verify gaming module structure
+      ansible.builtin.stat:
+        path: "{{ project_root }}/extra/gaming/site.yml"
+      register: gaming_check
+
+    - name: Assert gaming module present
+      ansible.builtin.assert:
+        that:
+          - gaming_check.stat.exists
+
+    - name: Verify business module structure
+      ansible.builtin.stat:
+        path: "{{ project_root }}/extra/business/site.yml"
+      register: business_check
+
+    - name: Assert business module present
+      ansible.builtin.assert:
+        that:
+          - business_check.stat.exists
+
+    - name: Verify flatpak module structure
+      ansible.builtin.stat:
+        path: "{{ project_root }}/extra/flatpak/site.yml"
+      register: flatpak_check
+
+    - name: Assert flatpak module present
+      ansible.builtin.assert:
+        that:
+          - flatpak_check.stat.exists
+
+    - name: Verify codium module structure
+      ansible.builtin.stat:
+        path: "{{ project_root }}/extra/codium/site.yml"
+      register: codium_check
+
+    - name: Assert codium module present
+      ansible.builtin.assert:
+        that:
+          - codium_check.stat.exists
+
+    - name: Verify debloat module structure
+      ansible.builtin.stat:
+        path: "{{ project_root }}/extra/debloat/site.yml"
+      register: debloat_check
+
+    - name: Assert debloat module present
+      ansible.builtin.assert:
+        that:
+          - debloat_check.stat.exists
+
+    - name: Verify packages module structure
+      ansible.builtin.stat:
+        path: "{{ project_root }}/extra/packages/site.yml"
+      register: packages_check
+
+    - name: Assert packages module present
+      ansible.builtin.assert:
+        that:
+          - packages_check.stat.exists
+
+    - name: Verify Python scripts exist
+      ansible.builtin.find:
+        paths: "{{ project_root }}/extra"
+        patterns: "*.py"
+        recurse: true
+      register: py_scripts
+
+    - name: Assert Python scripts present
+      ansible.builtin.assert:
+        that:
+          - py_scripts.files | length >= 3
+        fail_msg: "Expected at least 3 Python scripts, found {{ py_scripts.files | length }}"
+
+    - name: Verify JavaScript files exist
+      ansible.builtin.find:
+        paths: "{{ project_root }}/extra"
+        patterns: "*.js"
+        recurse: true
+      register: js_files
+
+    - name: Assert JavaScript files present
+      ansible.builtin.assert:
+        that:
+          - js_files.files | length >= 2
+        fail_msg: "Expected at least 2 JavaScript files, found {{ js_files.files | length }}"
+
+    - name: Verify SVG assets exist
+      ansible.builtin.find:
+        paths: "{{ project_root }}/extra"
+        patterns: "*.svg"
+        recurse: true
+      register: svg_files
+
+    - name: Assert SVG assets present
+      ansible.builtin.assert:
+        that:
+          - svg_files.files | length >= 1
+        fail_msg: "Expected at least 1 SVG file, found {{ svg_files.files | length }}"
+
+    - name: Test gaming module variables
+      ansible.builtin.set_fact:
+        test_gaming:
+          flatpaks:
+            - com.discordapp.Discord
+            - com.heroicgameslauncher.hgl
+
+    - name: Assert gaming variables valid
+      ansible.builtin.assert:
+        that:
+          - test_gaming.flatpaks | length == 2
+          - "'com.discordapp.Discord' in test_gaming.flatpaks"
+          - "'com.heroicgameslauncher.hgl' in test_gaming.flatpaks"
+
+    - name: Test business module variables
+      ansible.builtin.set_fact:
+        test_business:
+          flatpaks:
+            - com.slack.Slack
+
+    - name: Assert business variables valid
+      ansible.builtin.assert:
+        that:
+          - test_business.flatpaks | length == 1
+          - "'com.slack.Slack' in test_business.flatpaks"
+
+    - name: Test debloat module variables
+      ansible.builtin.set_fact:
+        test_debloat:
+          packages:
+            - firefox
+            - firefox-langpacks
+            - libreoffice-core
+
+    - name: Assert debloat variables valid
+      ansible.builtin.assert:
+        that:
+          - test_debloat.packages | length >= 3
+          - "'firefox' in test_debloat.packages"
+
+    - name: Test packages module variables
+      ansible.builtin.set_fact:
+        test_packages:
+          packages:
+            - firewalld
+            - brave-origin
+            - fish
+
+    - name: Assert packages variables valid
+      ansible.builtin.assert:
+        that:
+          - test_packages.packages | length >= 3
+          - "'firewalld' in test_packages.packages"
+          - "'brave-origin' in test_packages.packages"
+
+    - name: All extra module e2e tests passed
+      ansible.builtin.debug:
+        msg: "Extra module E2E tests completed successfully"

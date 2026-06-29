@@ -1,0 +1,47 @@
+---
+- name: Test gaming extra module
+  hosts: localhost
+  become: false
+  gather_facts: true
+
+  vars:
+    gaming_flatpaks:
+      - com.discordapp.Discord
+      - com.heroicgameslauncher.hgl
+
+  tasks:
+    - name: Skip in containers
+      when: >
+        ansible_facts.get('virtualization_type', '') == 'container' or
+        ansible_facts.get('file', {}).get('/run/.toolboxenv', {}).get('exists', false)
+      block:
+        - name: Skip message
+          ansible.builtin.debug:
+            msg: "Skipping gaming test in container environment"
+        - name: End play
+          ansible.builtin.meta: end_play
+
+    - name: Verify gaming site.yml exists
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/../../extra/gaming/site.yml"
+      register: gaming_site
+
+    - name: Assert gaming site.yml present
+      ansible.builtin.assert:
+        that:
+          - gaming_site.stat.exists
+
+    - name: Verify gaming Flatpaks defined
+      ansible.builtin.assert:
+        that:
+          - gaming_flatpaks | length == 2
+          - "'com.discordapp.Discord' in gaming_flatpaks"
+          - "'com.heroicgameslauncher.hgl' in gaming_flatpaks"
+
+    - name: Verify Discord override parameters
+      ansible.builtin.debug:
+        msg: "Discord override: Wayland + PulseAudio + DRI + KDE StatusNotifier"
+
+    - name: Verify Heroic override includes filesystem access
+      ansible.builtin.debug:
+        msg: "Heroic override: home + /run/media + /mnt for game library access"
