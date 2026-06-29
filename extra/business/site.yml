@@ -1,0 +1,56 @@
+---
+- name: Setup business environment
+  hosts: localhost
+  become: true
+  gather_facts: true
+
+  vars:
+    business_flatpaks:
+      - com.slack.Slack
+
+  tasks:
+    - name: Skip in containers
+      when: >
+        ansible_facts.get('virtualization_type', '') == 'container' or
+        ansible_facts.get('file', {}).get('/run/.toolboxenv', {}).get('exists', false)
+      block:
+        - name: Skip message
+          ansible.builtin.debug:
+            msg: "Skipping business setup in container environment"
+        - name: End play
+          ansible.builtin.meta: end_play
+
+    - name: Add Flathub remote
+      ansible.builtin.shell: |
+        flatpak remote-add --if-not-exists flathub "https://dl.flathub.org/repo/flathub.flatpakrepo"
+      register: remote_result
+      changed_when: remote_result.rc == 0
+      failed_when: false
+
+    - name: Install business Flatpak applications
+      ansible.builtin.shell: |
+        flatpak install -y flathub {{ item }}
+      loop: "{{ business_flatpaks }}"
+      loop_control:
+        label: "{{ item }}"
+      register: business_install
+      changed_when: business_install.rc == 0
+      failed_when: false
+
+    - name: Reset Flatpak overrides for business apps
+      ansible.builtin.shell: flatpak override --user --reset {{ item }}
+      loop: "{{ business_flatpaks }}"
+      loop_control:
+        label: "{{ item }}"
+      failed_when: false
+
+    - name: Apply Slack override
+      ansible.builtin.shell: >
+        flatpak override --user com.slack.Slack
+        --share=ipc
+        --socket=fallback-x11
+        --socket=wayland
+        --socket=pulseaudio
+        --device=dri
+        --talk-name=org.kde.StatusNotifierWatcher
+        --env=GTK_USE_PORTAL=1
