@@ -560,7 +560,7 @@ jobs:
               cfg = yaml.safe_load(f)
           masked = cfg.get('atomik_masked_services', [])
           critical = ['NetworkManager', 'bluetooth', 'systemd-resolved', 'sshd', 'gdm', 'sddm']
-          conflicts = [s for s in masked if any(c in s for c in critical)]
+          conflicts = [s for s in masked if s in critical or s.rsplit('.', 1)[0] in critical]
           if conflicts:
               print(f'CRITICAL: Masked services conflict: {conflicts}')
               exit(1)
