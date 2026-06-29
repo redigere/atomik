@@ -257,7 +257,7 @@ jobs:
             --check --diff \
             --skip-tags desktop,devtools,packages \
             -e 'ansible_python_interpreter=/usr/bin/python3' \
-             2>&1 | tail -50; exit 0
+             2>&1 | tail -50 || true
 
   validate-docs:
     name: validate docs
