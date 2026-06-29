@@ -1,0 +1,90 @@
+---
+- name: Debloat system packages via rpm-ostree
+  hosts: localhost
+  become: true
+  gather_facts: true
+
+  vars:
+    atomik_rpm_remove:
+      - firefox
+      - firefox-langpacks
+      - google-noto-sans-cjk-vf-fonts
+      - google-noto-color-emoji-fonts
+      - google-noto-emoji-fonts
+      - default-fonts-core-emoji
+      - libreoffice-core
+      - libreoffice-draw
+      - libreoffice-impress
+      - libreoffice-calc
+      - libreoffice-writer
+
+  tasks:
+    - name: Skip in containers
+      when: >
+        ansible_facts.get('virtualization_type', '') == 'container' or
+        ansible_facts.get('file', {}).get('/run/.toolboxenv', {}).get('exists', false)
+      block:
+        - name: Skip message
+          ansible.builtin.debug:
+            msg: "Skipping debloat in container environment"
+        - name: End play
+          ansible.builtin.meta: end_play
+
+    - name: Save toolbox container list
+      ansible.builtin.shell: |
+        podman ps -a --filter label=com.github.containers.toolbox=true --format '{% raw %}{{.Names}}{% endraw %}' 2>/dev/null | sort | tr '\n' ' '
+      register: toolbox_before
+      changed_when: false
+      failed_when: false
+
+    - name: Remove packages via rpm-ostree override
+      ansible.builtin.shell: |
+        rpm-ostree override remove {{ atomik_rpm_remove | join(' ') }}
+      register: override_result
+      changed_when: "'Queued for removal' in override_result.stdout"
+      failed_when: false
+
+    - name: Check if live changes are needed
+      ansible.builtin.shell: |
+        rpm-ostree status --json | python3 -c '
+        import json, sys
+        d = json.load(sys.stdin).get("deployments", [])
+        b = [x for x in d if x.get("booted")]
+        pkgs = b[0].get("packages", []) + b[0].get("requested-packages", []) if b else []
+        sys.exit(0 if pkgs else 1)
+        '
+      register: pending_changes
+      changed_when: false
+      failed_when: false
+
+    - name: Apply live changes
+      ansible.builtin.shell: rpm-ostree apply-live --allow-replacement
+      register: apply_result
+      changed_when: apply_result.rc == 0
+      failed_when: false
+      when: pending_changes.rc == 0
+
+    - name: Verify toolbox containers preserved
+      ansible.builtin.shell: |
+        SAVED="{{ toolbox_before.stdout }}"
+        [ -z "$SAVED" ] && echo "no_toolbox_containers" && exit 0
+        CURRENT=$(podman ps -a --filter label=com.github.containers.toolbox=true --format '{% raw %}{{.Names}}{% endraw %}' 2>/dev/null | sort | tr '\n' ' ')
+        for name in $SAVED; do
+          FOUND=0
+          for cname in $CURRENT; do
+            [ "$name" = "$cname" ] && FOUND=1 && break
+          done
+          [ "$FOUND" = 0 ] && echo "MISSING: $name"
+        done
+      register: toolbox_verify
+      changed_when: false
+      failed_when: false
+      when: apply_result.changed
+
+    - name: Warn about missing toolbox containers
+      ansible.builtin.debug:
+        msg: "ATTENZIONE: container toolbox persi dopo apply-live: {{ toolbox_verify.stdout }}"
+      when:
+        - toolbox_verify.stdout_lines is defined
+        - toolbox_verify.stdout_lines | length > 0
+        - toolbox_verify.stdout != "no_toolbox_containers"
