@@ -1,9 +1,9 @@
 .PHONY: all lint check test install-deps apply clean help
-.PHONY: apply-repos apply-packages apply-security apply-desktop apply-devtools apply-extra apply-extra-kde apply-extra-gnome apply-extra-flatpak apply-extra-codium
+.PHONY: apply-repos apply-packages apply-security apply-desktop apply-extra apply-extra-kde apply-extra-gnome apply-extra-flatpak apply-extra-codium apply-extra-devtools
 
 ANSIBLE_PLAYBOOK = ansible-playbook ansible/site.yml -i ansible/inventories/localhost/hosts.yml
 E2E_PLAYBOOK = ansible-playbook tests/e2e.yml -i ansible/inventories/localhost/hosts.yml -c local
-ROLES = repos packages security desktop devtools
+ROLES = repos packages security desktop
 
 all: lint test
 
@@ -19,10 +19,11 @@ help:
 	@echo "  make apply-extra-gnome Apply GNOME theme/settings"
 	@echo "  make apply-extra-flatpak Install non-system Flatpak apps"
 	@echo "  make apply-extra-codium  Install and configure debloated VSCodium"
+	@echo "  make apply-extra-devtools Install dev tools (nvm, pnpm, rustup, sdkman, opencode)"
 	@echo "  make install-deps     Install ansible-core + collections"
 	@echo "  make clean            Remove ansible retry files"
 
-apply-extra: apply-extra-kde apply-extra-gnome
+apply-extra: apply-extra-kde apply-extra-gnome apply-extra-devtools
 
 apply-extra-kde:
 	python3 extra/kde/apply_kde.py
@@ -35,6 +36,9 @@ apply-extra-flatpak:
 
 apply-extra-codium:
 	python3 extra/codium/apply_codium.py
+
+apply-extra-devtools:
+	python3 extra/devtools/apply_devtools.py
 
 lint:
 	cd ansible && ansible-playbook --syntax-check site.yml
@@ -63,9 +67,6 @@ apply-security:
 
 apply-desktop:
 	pkexec $(ANSIBLE_PLAYBOOK) --tags desktop
-
-apply-devtools:
-	pkexec $(ANSIBLE_PLAYBOOK) --tags devtools
 
 clean:
 	rm -f ansible/*.retry tests/*.retry

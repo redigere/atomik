@@ -66,5 +66,4 @@
       tags: [security]
     - role: desktop
       tags: [desktop, gnome, kde]
-    - role: devtools
-      tags: [devtools]
+

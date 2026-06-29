@@ -3,6 +3,7 @@ import os
 import subprocess
 import time
 import re
+import shutil
 
 INTERVAL = {{ atomik_appnap_interval }}
 HIGH_PERCENT = {{ atomik_appnap_memory_high }}
@@ -86,6 +87,31 @@ def is_focused(pid, cgroup_procs):
     return False
 
 
+def write_with_retry(path, value, retries=3):
+    for attempt in range(retries):
+        try:
+            with open(path, "w") as f:
+                f.write(str(value))
+            return True
+        except OSError as e:
+            if attempt < retries - 1:
+                time.sleep(0.01)
+    return False
+
+
+def has_memory_pressure(cgroup_path):
+    pressure_file = os.path.join(cgroup_path, "memory.pressure")
+    try:
+        with open(pressure_file) as f:
+            for line in f:
+                if line.startswith("some avg10="):
+                    val = float(line.split()[1].split("=")[1].strip())
+                    return val > 5.0
+    except (OSError, ValueError, IndexError):
+        pass
+    return False
+
+
 def main():
     while True:
         focused_pid = get_focused_pid()
@@ -102,28 +128,26 @@ def main():
             if not os.path.isfile(cgroup_procs):
                 continue
             if is_focused(focused_pid, cgroup_procs):
-                with open(mem_high, "w") as f:
-                    f.write("max")
+                write_with_retry(mem_high, "max")
             else:
                 try:
                     with open(mem_current) as f:
                         current = int(f.read().strip())
                 except (OSError, ValueError):
                     continue
-                high_value = current * HIGH_PERCENT // 100
-                if high_value <= current:
-                    high_value = current + 1
-                with open(mem_high, "w") as f:
-                    f.write(str(high_value))
+                limit = current * HIGH_PERCENT // 100
+                if limit <= current:
+                    limit = current + 1
+                write_with_retry(mem_high, limit)
                 mem_reclaim = os.path.join(full_path, "memory.reclaim")
                 if os.path.isfile(mem_reclaim):
-                    reclaim_val = current * 10 // 100
+                    reclaim_val = current * 25 // 100
                     if reclaim_val > 0:
-                        try:
-                            with open(mem_reclaim, "w") as f:
-                                f.write(str(reclaim_val))
-                        except OSError:
-                            pass
+                        write_with_retry(mem_reclaim, reclaim_val)
+                mem_max = os.path.join(full_path, "memory.max")
+                if os.path.isfile(mem_max):
+                    max_limit = current * 200 // 100
+                    write_with_retry(mem_max, str(max_limit))
         time.sleep(INTERVAL)
 
 
