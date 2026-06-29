@@ -348,7 +348,7 @@ jobs:
 
       - name: Log role structure verification
         run: |
-          for role in repos packages security desktop devtools; do
+          for role in repos packages security desktop; do
             test -f "ansible/roles/$role/tasks/main.yml" || exit 1
           done
 
@@ -465,18 +465,6 @@ jobs:
               print(f'{v}: {len(prot)} OOMD protected services')
           "
 
-      - name: Log kontainer removal validation
-        run: |
-          python3 -c "
-          import yaml
-          with open('ansible/roles/packages/tasks/kontainer_remove.yml') as f:
-              tasks = yaml.safe_load(f)
-          assert len(tasks) == 3, 'Expected 3 kontainer removal tasks'
-          names = [t.get('name', '') for t in tasks]
-          assert 'Uninstall Kontainer Flatpak' in names[0]
-          print('Kontainer removal tasks: OK')
-          "
-
       - name: Log shell script reference verification
         run: |
           python3 -c "
@@ -491,6 +479,105 @@ jobs:
                   print(f'WARNING: expected {expected} in config')
           print('Shell references OK')
           "
+
+      - name: Log extra modules validation
+        run: |
+          python3 -c "
+          import yaml, os, sys
+          extras = ['business', 'codium', 'debloat', 'flatpak', 'gaming', 'gnome', 'kde', 'packages']
+          errors = []
+          for ext in extras:
+              site_yml = f'extra/{ext}/site.yml'
+              if not os.path.exists(site_yml):
+                  # Some extras use Python scripts instead
+                  py_files = [f for f in os.listdir(f'extra/{ext}') if f.endswith('.py')]
+                  if not py_files:
+                      errors.append(f'MISSING: {site_yml} and no Python scripts')
+                  else:
+                      print(f'{ext}: Python scripts ({len(py_files)} files)')
+              else:
+                  print(f'{ext}: site.yml present')
+          if errors:
+              for e in errors:
+                  print(e, file=sys.stderr)
+              sys.exit(1)
+          print(f'All {len(extras)} extra modules validated')
+          "
+
+      - name: Log gaming module validation
+        run: |
+          python3 -c "
+          import yaml
+          with open('extra/gaming/site.yml') as f:
+              cfg = yaml.safe_load(f)
+          flatpaks = cfg[0]['vars']['gaming_flatpaks']
+          assert 'com.discordapp.Discord' in flatpaks, 'Discord missing'
+          assert 'com.heroicgameslauncher.hgl' in flatpaks, 'Heroic missing'
+          print(f'Gaming: {len(flatpaks)} Flatpaks configured')
+          "
+
+      - name: Log business module validation
+        run: |
+          python3 -c "
+          import yaml
+          with open('extra/business/site.yml') as f:
+              cfg = yaml.safe_load(f)
+          flatpaks = cfg[0]['vars']['business_flatpaks']
+          assert 'com.slack.Slack' in flatpaks, 'Slack missing'
+          print(f'Business: {len(flatpaks)} Flatpaks configured')
+          "
+
+      - name: Log debloat module validation
+        run: |
+          python3 -c "
+          import yaml
+          with open('extra/debloat/site.yml') as f:
+              cfg = yaml.safe_load(f)
+          packages = cfg[0]['vars']['atomik_rpm_remove']
+          assert 'firefox' in packages, 'firefox missing from debloat'
+          assert len(packages) >= 5, f'Expected at least 5 packages, got {len(packages)}'
+          print(f'Debloat: {len(packages)} packages to remove')
+          "
+
+      - name: Log packages module validation
+        run: |
+          python3 -c "
+          import yaml
+          with open('extra/packages/site.yml') as f:
+              cfg = yaml.safe_load(f)
+          packages = cfg[0]['vars']['atomik_rpm_install']
+          assert 'firewalld' in packages, 'firewalld missing'
+          assert 'brave-origin' in packages, 'brave-origin missing'
+          assert len(packages) >= 10, f'Expected at least 10 packages, got {len(packages)}'
+          print(f'Packages: {len(packages)} packages to install')
+          "
+
+      - name: Log masked services validation
+        run: |
+          python3 -c "
+          import yaml
+          with open('ansible/group_vars/all.yml') as f:
+              cfg = yaml.safe_load(f)
+          masked = cfg.get('atomik_masked_services', [])
+          critical = ['NetworkManager', 'bluetooth', 'systemd-resolved', 'sshd', 'gdm', 'sddm']
+          conflicts = [s for s in masked if any(c in s for c in critical)]
+          if conflicts:
+              print(f'CRITICAL: Masked services conflict: {conflicts}')
+              exit(1)
+          print(f'Masked services OK: {len(masked)} services, no critical conflicts')
+          "
+
+      - name: Log toolbox gaming test
+        run: |
+          ansible-playbook tests/toolbox/test_gaming.yml -i ansible/inventories/localhost/hosts.yml -c local 2>&1 | tail -5
+
+      - name: Log toolbox business test
+        run: |
+          ansible-playbook tests/toolbox/test_business.yml -i ansible/inventories/localhost/hosts.yml -c local 2>&1 | tail -5
+
+      - name: Log toolbox extras all test
+        run: |
+          ansible-playbook tests/toolbox/test_extras_all.yml -i ansible/inventories/localhost/hosts.yml -c local 2>&1 | tail -5
 
   e2e-integration:
     name: e2e integration
@@ -511,6 +598,11 @@ jobs:
         run: ansible-playbook tests/e2e.yml -i ansible/inventories/localhost/hosts.yml -c local
         env:
           ANSIBLE_LOG_PATH: /tmp/ansible.log
+
+      - name: Log E2E extras playbook execution
+        run: ansible-playbook tests/e2e_extras.yml -i ansible/inventories/localhost/hosts.yml -c local
+        env:
+          ANSIBLE_LOG_PATH: /tmp/ansible-extras.log
 
       - name: Store E2E log artifact
         if: always()

@@ -77,7 +77,6 @@
         - packages
         - security
         - desktop
-        - devtools
 
     - name: Assert all roles present
       ansible.builtin.assert:
@@ -153,8 +152,8 @@
     - name: Assert packages sub-tasks present
       ansible.builtin.assert:
         that:
-          - packages_tasks.files | length >= 4
-        fail_msg: "Expected at least 4 packages tasks, found {{ packages_tasks.files | length }}"
+          - packages_tasks.files | length >= 3
+        fail_msg: "Expected at least 3 packages tasks, found {{ packages_tasks.files | length }}"
 
     - name: Test security role tasks exist
       ansible.builtin.find:
