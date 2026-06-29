@@ -6,6 +6,7 @@
     state: started
     enabled: true
     masked: false
+  failed_when: false
 
 - name: Deploy OOMD config
   ansible.builtin.copy:

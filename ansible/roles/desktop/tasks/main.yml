@@ -8,5 +8,3 @@
   ansible.builtin.include_tasks: kde.yml
   when: atomik_desktop == 'kde'
 
-- name: Deploy App Nap service
-  ansible.builtin.include_tasks: appnap.yml

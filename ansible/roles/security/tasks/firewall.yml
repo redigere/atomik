@@ -4,6 +4,7 @@
     name: firewalld
     state: started
     enabled: true
+  failed_when: false
 
 - name: Add firewall services
   ansible.builtin.shell: |

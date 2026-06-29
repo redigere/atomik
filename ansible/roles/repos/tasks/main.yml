@@ -10,3 +10,4 @@
   loop: "{{ atomik_repositories | dict2items }}"
   loop_control:
     label: "{{ item.key }}"
+  failed_when: false
