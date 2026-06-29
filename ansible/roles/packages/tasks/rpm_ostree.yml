@@ -6,20 +6,6 @@
   changed_when: false
   failed_when: false
 
-- name: Install packages via rpm-ostree
-  ansible.builtin.shell: |
-    rpm-ostree install -y --idempotent --allow-inactive {{ atomik_rpm_install | join(' ') }}
-  register: rpm_install_result
-  changed_when: "'Queued' in rpm_install_result.stdout"
-  failed_when: false
-
-- name: Remove packages via rpm-ostree override
-  ansible.builtin.shell: |
-    rpm-ostree override remove {{ atomik_rpm_remove | join(' ') }}
-  register: override_result
-  changed_when: "'Queued for removal' in override_result.stdout"
-  failed_when: false
-
 - name: Install variant-specific packages
   ansible.builtin.shell: |
     rpm-ostree install -y --idempotent --allow-inactive {{ atomik_variant_install[atomik_variant] | default([]) | join(' ') }}
