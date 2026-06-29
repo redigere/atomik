@@ -1,7 +1,28 @@
 {% if 'amdgpu' in ansible_kernel_modules | default([]) %}
-GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX amdgpu.sched_jobs=1024 amdgpu.gpu_recovery=0"
+GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX \
+  amdgpu.sched_jobs=4096 \
+  amdgpu.gpu_recovery=0 \
+  amdgpu.ras=0 \
+  amdgpu.dc=1 \
+  amdgpu.dcdebugmask=0x10 \
+  amdgpu.ppfeaturemask=0xfff7ffff \
+  amdgpu.num_kernel_fence_wait=1"
 {% elif 'nvidia' in ansible_kernel_modules | default([]) %}
-GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX nvidia.NVreg_EnableGpuFirmware=0 nvidia_drm.modeset=1 nvidia_drm.fbdev=1"
+GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX \
+  nvidia.NVreg_EnableGpuFirmware=0 \
+  nvidia_drm.modeset=1 \
+  nvidia_drm.fbdev=1 \
+  nvidia.NVreg_UsePageAttributeTable=1 \
+  nvidia.NVreg_EnableStreamMemOPs=1 \
+  nvidia.NVreg_InitializeSystemMemoryAllocations=0 \
+  nvidia.NVreg_RegistryDwords="RMIntrLock=0;PowerMizerEnable=0x0;PerfLevelSrc=0x2222""
 {% elif 'i915' in ansible_kernel_modules | default([]) %}
-GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX i915.enable_psr=0"
+GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX \
+  i915.enable_psr=0 \
+  i915.enable_fbc=0 \
+  i915.enable_dp_mst=0 \
+  i915.disable_power_well=1 \
+  i915.enable_rc6=0 \
+  i915.enable_dc=0 \
+  i915.enable_guc=0"
 {% endif %}

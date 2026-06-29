@@ -6,7 +6,8 @@ governor=performance
 energy_performance_preference=performance
 boost=1
 max_perf_pct=100
-min_perf_pct=25
+min_perf_pct=100
+force_latency=1
 
 [kernel]
 nmi_watchdog=0
@@ -18,28 +19,33 @@ transparent_hugepages_defrag=never
 
 [audio]
 timeout=0
-alsa_buffer_size=64
+alsa_buffer_size=32
+alsa_period_size=128
 
 [scheduler]
 runtime=0
 nr_rqs=1024
-sched_migration_cost_ns=500000
-sched_min_granularity_ns=3000000
-sched_wakeup_granularity_ns=4000000
+sched_migration_cost_ns=250000
+sched_min_granularity_ns=1500000
+sched_wakeup_granularity_ns=2000000
+perf_cpu_time_max_percent=0
 
 [sysctl]
 kernel.timer_migration=0
 vm.zone_reclaim_mode=0
-vm.dirty_ratio=5
-vm.dirty_background_ratio=2
-vm.vfs_cache_pressure=50
-vm.swappiness=5
-kernel.sched_latency_ns=6000000
-kernel.sched_migration_cost_ns=500000
-kernel.sched_min_granularity_ns=3000000
-kernel.sched_wakeup_granularity_ns=4000000
+vm.dirty_ratio=3
+vm.dirty_background_ratio=1
+vm.vfs_cache_pressure=100
+vm.swappiness=1
+kernel.sched_latency_ns=4000000
+kernel.sched_migration_cost_ns=250000
+kernel.sched_min_granularity_ns=1500000
+kernel.sched_wakeup_granularity_ns=2000000
 vm.compaction_proactiveness=0
 vm.page_lock_unfairness=1
+kernel.numa_balancing=0
+vm.watermark_boost_factor=0
+vm.watermark_low_factor=200
 
 [service]
-service.stopped=abrtd,abrt-journal-core,cups,fwupd,geoclue,ModemManager,packagekit,upower
+service.stopped=abrtd,abrt-journal-core,cups,fwupd,geoclue,ModemManager,packagekit,upower,colord,accounts-daemon,bluetooth

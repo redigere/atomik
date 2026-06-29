@@ -1,14 +1,14 @@
 {% set total_ram_kb = ansible_memtotal_mb * 1024 %}
-{% set min_free = [((total_ram_kb * 1.5 / 100) | int), 16384] | max %}
-{% set min_free = [min_free, 196608] | min %}
-{% set admin_reserve = [((total_ram_kb * 0.5 / 100) | int), 4096] | max %}
-{% set admin_reserve = [admin_reserve, 16384] | min %}
-{% if total_ram_kb < 2097152 %}
-{% set watermark_scale = 150 %}
-{% else %}
-{% set watermark_scale = 150 %}
-{% endif %}
+{% set total_ram_gb = ansible_memtotal_mb / 1024 %}
+{% set min_free = [((total_ram_kb * 3 / 100) | int), 131072] | max %}
+{% set min_free = [min_free, 524288] | min %}
+{% set admin_reserve = [((total_ram_kb * 1 / 100) | int), 8192] | max %}
+{% set admin_reserve = [admin_reserve, 65536] | min %}
+{% set watermark_scale = 200 %}
+{% set user_reserve = [((total_ram_kb * 1 / 100) | int), 8192] | max %}
+{% set user_reserve = [user_reserve, 65536] | min %}
 
 vm.min_free_kbytes={{ min_free }}
 vm.admin_reserve_kbytes={{ admin_reserve }}
+vm.user_reserve_kbytes={{ user_reserve }}
 vm.watermark_scale_factor={{ watermark_scale }}

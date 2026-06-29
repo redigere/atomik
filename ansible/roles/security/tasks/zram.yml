@@ -8,3 +8,12 @@
     group: root
     mode: "0644"
   notify: Restart zram
+
+- name: Deploy ZRAM udev tuning
+  ansible.builtin.copy:
+    content: "{{ atomik_zram_udev_rules }}"
+    dest: /etc/udev/rules.d/99-atomik-zram.rules
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload udev

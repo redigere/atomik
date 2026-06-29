@@ -25,6 +25,15 @@
     mode: "0644"
   notify: Reload systemd
 
+- name: Deploy user slice memory limits
+  ansible.builtin.copy:
+    content: "{{ atomik_cgroup_user_slice }}"
+    dest: /etc/systemd/system/user-.slice.d/99-atomik-memory.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+
 - name: Create OOMD protected service dropins
   ansible.builtin.template:
     src: oomd_protected.service.d.j2
@@ -33,6 +42,30 @@
     group: root
     mode: "0644"
   loop: "{{ atomik_oomd_protected_services[atomik_variant] | default([]) }}"
+  loop_control:
+    label: "{{ item }}"
+  notify: Reload systemd
+
+- name: Deploy protected service cgroup limits
+  ansible.builtin.copy:
+    content: "{{ atomik_cgroup_protected_default }}"
+    dest: "/etc/systemd/system/{{ item }}.service.d/99-atomik-cgroup.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ atomik_oomd_protected_services[atomik_variant] | default([]) }}"
+  loop_control:
+    label: "{{ item }}"
+  notify: Reload systemd
+
+- name: Deploy compositor CPU weight
+  ansible.builtin.copy:
+    content: "{{ atomik_cgroup_cpu_weight_compositor }}"
+    dest: "/etc/systemd/system/{{ item }}.service.d/99-atomik-cpuweight.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ atomik_desktop_scheduler_services[atomik_variant] | default([]) }}"
   loop_control:
     label: "{{ item }}"
   notify: Reload systemd

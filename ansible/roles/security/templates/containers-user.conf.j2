@@ -1,0 +1,26 @@
+[containers]
+pids_limit = 2048
+log_driver = "journald"
+volume_path = "{{ _podman_user_storage }}/volumes"
+env = ["CONTAINERS_STORAGE_CONF={{ _podman_user_config }}/storage-nested.conf"]
+volumes = [
+  "{{ _podman_user_config }}/storage-nested.conf:{{ _podman_user_config }}/storage-nested.conf",
+  "{{ _podman_user_config }}/containers.conf:{{ _podman_user_config }}/containers.conf",
+]
+devices = ["/dev/fuse:/dev/fuse"]
+stop_timeout = 10
+
+[engine]
+events_logfile_path = "{{ _podman_user_storage }}/events/events.log"
+lock_type = "shm"
+database_backend = "sqlite"
+cgroup_manager = "systemd"
+events_logger = "journald"
+runtime = "crun"
+image_copy_tmp_dir = "/var/tmp"
+infra_image = ""
+
+[network]
+default_rootless_network_cmd = "slirp4netns"
+dns_bind_port = 5353
+default_subnet = "10.88.0.0/16"

@@ -1,15 +1,43 @@
 {% if ansible_processor_cores | default(4) > 2 %}
+{% set nohz_range = '2-' ~ (ansible_processor_cores - 1) %}
 GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX \
   mitigations=off \
   nowatchdog \
-  nohz_full=2-{{ ansible_processor_cores - 1 }} \
-  rcu_nocbs=2-{{ ansible_processor_cores - 1 }} \
+  nohz_full={{ nohz_range }} \
+  rcu_nocbs={{ nohz_range }} \
+  rcu_nocb_poll \
   skew_tick=1 \
-  audit=0"
+  audit=0 \
+  audit_backlog_limit=0 \
+  oops=panic \
+  panic=1 \
+  intel_pstate=active \
+  amd_pstate=active \
+  processor.max_cstate=1 \
+  intel_idle.max_cstate=0 \
+  intel_idle.max_cstate_allow=1 \
+  idle=nomwait \
+  mce=ignore \
+  nmi_watchdog=0 \
+  pcie_aspm=off \
+  modprobe.blacklist=mei,mei_me,mei_hdcp"
 {% else %}
 GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX \
   mitigations=off \
   nowatchdog \
   skew_tick=1 \
-  audit=0"
+  audit=0 \
+  audit_backlog_limit=0 \
+  oops=panic \
+  panic=1 \
+  intel_pstate=active \
+  amd_pstate=active \
+  processor.max_cstate=1 \
+  intel_idle.max_cstate=0 \
+  intel_idle.max_cstate_allow=1 \
+  idle=nomwait \
+  mce=ignore \
+  nmi_watchdog=0 \
+  pcie_aspm=off \
+  modprobe.blacklist=mei,mei_me,mei_hdcp"
 {% endif %}

@@ -1,0 +1,26 @@
+[containers]
+pids_limit = 2048
+log_driver = "journald"
+volume_path = "/var/lib/containers/storage/volumes"
+env = ["CONTAINERS_STORAGE_CONF=/etc/containers/storage-nested.conf"]
+volumes = [
+  "/etc/containers/storage-nested.conf:/etc/containers/storage-nested.conf",
+  "/etc/containers/containers.conf:/etc/containers/containers.conf",
+]
+devices = ["/dev/fuse:/dev/fuse"]
+stop_timeout = 10
+
+[engine]
+events_logfile_path = "/var/lib/containers/storage/events/events.log"
+lock_type = "shm"
+database_backend = "sqlite"
+cgroup_manager = "systemd"
+events_logger = "journald"
+runtime = "crun"
+image_copy_tmp_dir = "/var/tmp"
+infra_image = ""
+
+[network]
+default_rootless_network_cmd = "slirp4netns"
+dns_bind_port = 5353
+default_subnet = "10.88.0.0/16"

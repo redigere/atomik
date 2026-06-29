@@ -1,0 +1,47 @@
+---
+
+- name: Set podman user paths
+  ansible.builtin.set_fact:
+    _podman_user_home: "/var/home/{{ atomik_user }}"
+    _podman_user_config: "/var/home/{{ atomik_user }}/.config/containers"
+    _podman_user_storage: "/var/home/{{ atomik_user }}/.local/share/containers/storage"
+
+- name: Deploy system containers.conf
+  ansible.builtin.template:
+    src: containers-system.conf.j2
+    dest: /etc/containers/containers.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Deploy user containers.conf
+  ansible.builtin.template:
+    src: containers-user.conf.j2
+    dest: "{{ _podman_user_config }}/containers.conf"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+
+- name: Ensure podman events directory exists (system)
+  ansible.builtin.file:
+    path: /var/lib/containers/storage/events
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure podman events directory exists (user)
+  ansible.builtin.file:
+    path: "{{ _podman_user_storage }}/events"
+    state: directory
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0755"
+
+- name: Verify pasta fallback works
+  ansible.builtin.command: >
+    podman run --rm --network=slirp4netns alpine:latest echo ok
+  register: _podman_verify
+  changed_when: false
+  become: false
+  failed_when: false

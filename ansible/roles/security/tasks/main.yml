@@ -53,3 +53,9 @@
 
 - name: Apply audio latency tuning
   ansible.builtin.include_tasks: audio.yml
+
+- name: Apply journald latency tuning
+  ansible.builtin.include_tasks: journald.yml
+
+- name: Configure podman networking (pasta → slirp4netns)
+  ansible.builtin.include_tasks: podman.yml
