@@ -1,10 +1,10 @@
-.PHONY: all lint check test install-deps apply clean help
-.PHONY: apply-repos apply-packages apply-security apply-desktop apply-extra apply-extra-kde apply-extra-gnome apply-extra-flatpak apply-extra-codium apply-extra-devtools
+.PHONY: all lint check test install-deps apply-core clean help
+.PHONY: apply-only-repos apply-only-packages apply-only-security apply-only-desktop
+.PHONY: apply-extra apply-extra-kde apply-extra-gnome apply-extra-flatpak apply-extra-codium apply-extra-devtools
 
-ANSIBLE_PLAYBOOK = ansible-playbook ansible/site.yml -i ansible/inventories/localhost/hosts.yml
-E2E_PLAYBOOK = ansible-playbook tests/e2e.yml -i ansible/inventories/localhost/hosts.yml -c local
-ROLES = repos packages security desktop
-
+PROJECT_DIR := $(shell pwd)
+ANSIBLE_PLAYBOOK = ansible-playbook $(PROJECT_DIR)/ansible/site.yml -i $(PROJECT_DIR)/ansible/inventories/localhost/hosts.yml
+E2E_PLAYBOOK = ansible-playbook $(PROJECT_DIR)/tests/e2e.yml -i $(PROJECT_DIR)/ansible/inventories/localhost/hosts.yml -c local
 all: lint test
 
 help:
@@ -12,8 +12,11 @@ help:
 	@echo "  make all              Run lint + test"
 	@echo "  make lint             Syntax check all playbooks"
 	@echo "  make test             Run e2e tests"
-	@echo "  make apply            Apply full configuration"
-	@echo "  make apply-<role>     Apply single role ($(ROLES))"
+	@echo "  make apply-core        Apply full configuration"
+	@echo "  make apply-only-repos    Apply repos only"
+	@echo "  make apply-only-packages Apply packages only"
+	@echo "  make apply-only-security Apply security only"
+	@echo "  make apply-only-desktop  Apply desktop only"
 	@echo "  make apply-extra      Apply all extra configs"
 	@echo "  make apply-extra-kde  Apply KDE panels/theme"
 	@echo "  make apply-extra-gnome Apply GNOME theme/settings"
@@ -53,20 +56,20 @@ install-deps:
 	pkexec rpm-ostree install -y --idempotent --apply-live ansible-core python3-ansible-lint
 	pkexec ansible-galaxy collection install ansible.posix community.general
 
-apply:
-	pkexec $(ANSIBLE_PLAYBOOK)
-
-apply-repos:
+apply-only-repos:
 	pkexec $(ANSIBLE_PLAYBOOK) --tags repos
 
-apply-packages:
+apply-only-packages:
 	pkexec $(ANSIBLE_PLAYBOOK) --tags packages
 
-apply-security:
+apply-only-security:
 	pkexec $(ANSIBLE_PLAYBOOK) --tags security
 
-apply-desktop:
+apply-only-desktop:
 	pkexec $(ANSIBLE_PLAYBOOK) --tags desktop
+
+apply-core:
+	pkexec $(ANSIBLE_PLAYBOOK)
 
 clean:
 	rm -f ansible/*.retry tests/*.retry

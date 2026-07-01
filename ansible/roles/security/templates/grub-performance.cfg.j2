@@ -1,5 +1,5 @@
-{% if ansible_processor_cores | default(4) > 2 %}
-{% set nohz_range = '2-' ~ (ansible_processor_cores - 1) %}
+{% if ansible_facts["processor_cores"] | default(4) > 2 %}
+{% set nohz_range = '2-' ~ (ansible_facts["processor_cores"] - 1) %}
 GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX \
   mitigations=off \
   nowatchdog \

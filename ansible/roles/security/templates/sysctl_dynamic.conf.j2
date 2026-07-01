@@ -1,5 +1,5 @@
-{% set total_ram_kb = ansible_memtotal_mb * 1024 %}
-{% set total_ram_gb = ansible_memtotal_mb / 1024 %}
+{% set total_ram_kb = ansible_facts["memtotal_mb"] * 1024 %}
+{% set total_ram_gb = ansible_facts["memtotal_mb"] / 1024 %}
 {% set min_free = [((total_ram_kb * 3 / 100) | int), 131072] | max %}
 {% set min_free = [min_free, 524288] | min %}
 {% set admin_reserve = [((total_ram_kb * 1 / 100) | int), 8192] | max %}
