@@ -14,31 +14,26 @@ for sha in $(git rev-list "$BASE_SHA"..HEAD); do
     FAILED=1
   fi
 
-  if echo "$SUBJ" | grep -qE '[→←→✕✗✘▶►▸▹▷▷]'; then
-    echo "FAIL: $sha contains forbidden symbols"
+  if echo "$SUBJ" | grep -qE '[→←✕✗✘▶►▸▹▷]'; then
+    echo "FAIL: $sha contains forbidden symbols in subject"
     echo "  $SUBJ"
     FAILED=1
   fi
 
-  if echo "$SUBJ" | grep -qP '(?<!\w)-(?!\w)'; then
-    if ! echo "$SUBJ" | grep -qP '^\w+.*\w+$'; then
-      : 
-    fi
-  fi
-
-  if ! echo "$BODY" | grep -q "^Signed-off-by:"; then
-    echo "WARN: $sha missing Signed-off-by"
-    echo "  $SUBJ"
+  if ! echo "$BODY" | grep -q "^Signed-off-by: ALESSIO ATTTILIO <ATTILIO.ALESSIO@PROTONMAIL.COM>"; then
+    echo "FAIL: $sha missing valid Signed-off-by"
+    echo "  Subject: $SUBJ"
+    FAILED=1
   fi
 done
 
 if [ "$FAILED" -eq 1 ]; then
   echo ""
-  echo "Commit message rules:"
+  echo "Commit rules:"
   echo "  Max 80 chars for subject"
   echo "  Allowed symbols: () : ;"
-  echo "  Forbidden: → ← → ✕ ✗ ✘ ▶ ► ▸ ▹ ▷"
-  echo "  Must include Signed-off-by line"
+  echo "  Forbidden: → ← ✕ ✗ ✘ ▶ ► ▸ ▹ ▷"
+  echo "  Required: Signed-off-by: ALESSIO ATTTILIO <ATTILIO.ALESSIO@PROTONMAIL.COM>"
   exit 1
 fi
 
