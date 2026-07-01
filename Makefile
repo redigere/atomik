@@ -1,6 +1,6 @@
-.PHONY: all lint check test install-deps apply-core clean help
+.PHONY: all lint check test install-deps apply-core apply-all clean help
 .PHONY: apply-only-repos apply-only-packages apply-only-security apply-only-desktop
-.PHONY: apply-extra apply-extra-kde apply-extra-gnome apply-extra-flatpak apply-extra-codium apply-extra-devtools
+.PHONY: apply-extra apply-extra-kde apply-extra-gnome apply-extra-nix apply-extra-codium apply-extra-devtools
 
 PROJECT_DIR := $(shell pwd)
 ANSIBLE_CONFIG = $(PROJECT_DIR)/ansible/ansible.cfg
@@ -13,21 +13,24 @@ help:
 	@echo "  make all                  Run lint + test"
 	@echo "  make lint                 Syntax check all playbooks"
 	@echo "  make test                 Run e2e tests"
-	@echo "  make apply-core           Apply full configuration"
+	@echo "  make apply-core           Apply core configuration (ansible)"
+	@echo "  make apply-extra          Apply all extra configs"
+	@echo "  make apply-all            Apply core + all extras"
 	@echo "  make apply-only-repos     Apply repos only"
 	@echo "  make apply-only-packages  Apply packages only"
 	@echo "  make apply-only-security  Apply security only"
 	@echo "  make apply-only-desktop   Apply desktop only"
-	@echo "  make apply-extra          Apply all extra configs"
 	@echo "  make apply-extra-kde      Apply KDE panels/theme"
 	@echo "  make apply-extra-gnome    Apply GNOME theme/settings"
-	@echo "  make apply-extra-flatpak  Install non-system Flatpak apps"
+	@echo "  make apply-extra-nix      Setup Nix and install user packages"
 	@echo "  make apply-extra-codium   Install and configure debloated VSCodium"
 	@echo "  make apply-extra-devtools Install dev tools (nvm, pnpm, rustup, sdkman, opencode)"
 	@echo "  make install-deps         Install ansible-core + collections"
 	@echo "  make clean                Remove ansible retry files"
 
-apply-extra: apply-extra-kde apply-extra-gnome apply-extra-devtools
+apply-all: apply-core apply-extra
+
+apply-extra: apply-extra-kde apply-extra-gnome apply-extra-nix apply-extra-devtools
 
 apply-extra-kde:
 	python3 extra/kde/apply_kde.py
@@ -35,8 +38,8 @@ apply-extra-kde:
 apply-extra-gnome:
 	python3 extra/gnome/apply_gnome.py
 
-apply-extra-flatpak:
-	python3 extra/flatpak/apply_flatpak.py
+apply-extra-nix:
+	python3 extra/nix/apply_nix.py
 
 apply-extra-codium:
 	python3 extra/codium/apply_codium.py
@@ -47,7 +50,7 @@ apply-extra-devtools:
 lint:
 	cd ansible && ansible-playbook --syntax-check site.yml
 	cd ansible && ansible-playbook --syntax-check ../tests/e2e.yml
-	cd ansible && ansible-playbook --syntax-check ../extra/flatpak/site.yml
+	cd ansible && ansible-playbook --syntax-check ../extra/nix/site.yml
 	cd ansible && ansible-playbook --syntax-check ../extra/codium/site.yml
 
 test:

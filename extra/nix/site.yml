@@ -1,0 +1,169 @@
+---
+- name: Setup Nix user-level package manager
+  hosts: localhost
+  become: true
+  gather_facts: true
+
+  vars:
+    atomik_nix_packages:
+      - discord
+      - easyeffects
+      - obs-studio
+      - slack
+      - vlc
+
+  tasks:
+    - name: Skip in containers
+      when: >
+        ansible_facts.get('virtualization_type', '') == 'container' or
+        ansible_facts.get('file', {}).get('/run/.toolboxenv', {}).get('exists', false)
+      block:
+        - name: Skip message
+          ansible.builtin.debug:
+            msg: "Skipping Nix setup in container environment"
+        - name: End play
+          ansible.builtin.meta: end_play
+
+    - name: Check if Nix store exists
+      ansible.builtin.stat:
+        path: "/var/home/{{ ansible_user_id }}/.nix/store"
+      register: nix_store
+
+    - name: Check if nix-user-chroot binary exists
+      ansible.builtin.stat:
+        path: "/var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot"
+      register: nix_chroot_bin
+
+    - name: Create nix-user-chroot directory
+      ansible.builtin.file:
+        path: "/var/home/{{ ansible_user_id }}/.nix-user-chroot/bin"
+        state: directory
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: "0755"
+      when: not nix_chroot_bin.stat.exists
+
+    - name: Download nix-user-chroot
+      ansible.builtin.get_url:
+        url: "https://github.com/nix-community/nix-user-chroot/releases/download/2.1.1/nix-user-chroot-bin-2.1.1-x86_64-unknown-linux-musl"
+        dest: "/var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot"
+        mode: "0755"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+      when: not nix_chroot_bin.stat.exists
+
+    - name: Create Nix root directory
+      ansible.builtin.file:
+        path: "/var/home/{{ ansible_user_id }}/.nix"
+        state: directory
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: "0755"
+      when: not nix_store.stat.exists
+
+    - name: Create .local/bin directory
+      ansible.builtin.file:
+        path: "/var/home/{{ ansible_user_id }}/.local/bin"
+        state: directory
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: "0755"
+
+    - name: Create nix helper script
+      ansible.builtin.copy:
+        content: |
+          #!/bin/sh
+          export HOME="/home/{{ ansible_user_id }}"
+          exec /home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot /home/{{ ansible_user_id }}/.nix /home/{{ ansible_user_id }}/.nix-profile/bin/nix "$@"
+        dest: "/var/home/{{ ansible_user_id }}/.local/bin/nix"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: "0755"
+
+    - name: Download Nix installer
+      ansible.builtin.get_url:
+        url: https://nixos.org/nix/install
+        dest: "/tmp/nix-install-{{ ansible_user_id }}.sh"
+        mode: "0755"
+      when: not nix_store.stat.exists
+
+    - name: Run Nix installer via nix-user-chroot
+      ansible.builtin.shell: |
+        set -euo pipefail
+        export HOME="/var/home/{{ ansible_user_id }}"
+        /var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ ansible_user_id }}/.nix sh /tmp/nix-install-{{ ansible_user_id }}.sh --no-daemon --yes
+      become: true
+      become_user: "{{ ansible_user_id }}"
+      args:
+        executable: /bin/bash
+      register: nix_install
+      changed_when: nix_install.rc == 0
+      when: not nix_store.stat.exists
+
+    - name: Remove installer
+      ansible.builtin.file:
+        path: "/tmp/nix-install-{{ ansible_user_id }}.sh"
+        state: absent
+      when: not nix_store.stat.exists
+
+    - name: Ensure nix.conf has experimental features
+      ansible.builtin.copy:
+        content: |
+          experimental-features = nix-command flakes
+        dest: "/var/home/{{ ansible_user_id }}/.config/nix/nix.conf"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: "0644"
+        backup: false
+
+    - name: Ensure Nix fish shell integration
+      ansible.builtin.copy:
+        content: |
+          if test -f /home/{{ ansible_user_id }}/.nix-profile/etc/profile.d/nix.fish
+              source /home/{{ ansible_user_id }}/.nix-profile/etc/profile.d/nix.fish
+          end
+        dest: "/var/home/{{ ansible_user_id }}/.config/fish/conf.d/nix.fish"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: "0644"
+        backup: false
+
+    - name: Add Nix channels
+      ansible.builtin.shell: |
+        set -euo pipefail
+        /var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ ansible_user_id }}/.nix /home/{{ ansible_user_id }}/.nix-profile/bin/nix-channel --list 2>/dev/null | grep -q "nixpkgs" || /var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ ansible_user_id }}/.nix /home/{{ ansible_user_id }}/.nix-profile/bin/nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+        /var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ ansible_user_id }}/.nix /home/{{ ansible_user_id }}/.nix-profile/bin/nix-channel --update
+      become: true
+      become_user: "{{ ansible_user_id }}"
+      args:
+        executable: /bin/bash
+      register: nix_channel
+      changed_when: nix_channel.rc == 0
+      failed_when: false
+
+    - name: Check which Nix packages are installed
+      ansible.builtin.shell: |
+        /var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ ansible_user_id }}/.nix /home/{{ ansible_user_id }}/.nix-profile/bin/nix profile list 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep "^Name:" | awk '{print $2}' || true
+      become: true
+      become_user: "{{ ansible_user_id }}"
+      args:
+        executable: /bin/bash
+      register: nix_installed_list
+      changed_when: false
+      failed_when: false
+
+    - name: Install missing Nix packages
+      ansible.builtin.shell: |
+        set -euo pipefail
+        /var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ ansible_user_id }}/.nix /home/{{ ansible_user_id }}/.nix-profile/bin/nix profile add nixpkgs#{{ item }}
+      become: true
+      become_user: "{{ ansible_user_id }}"
+      args:
+        executable: /bin/bash
+      loop: "{{ atomik_nix_packages }}"
+      loop_control:
+        label: "{{ item }}"
+      register: nix_install_pkg
+      changed_when: nix_install_pkg.rc == 0
+      failed_when: false
+      when: item not in (nix_installed_list.stdout_lines | default([]))
