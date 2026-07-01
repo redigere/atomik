@@ -491,7 +491,6 @@ atomik_rpm_install:
   - host-spawn
   - fish
   - fontawesome-fonts-all
-  - tuned
   - tuned-utils
 
 atomik_rpm_remove:

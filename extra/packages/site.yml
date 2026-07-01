@@ -6,22 +6,13 @@
 
   vars:
     atomik_rpm_install:
-      - firewalld
       - powertop
-      - zram-generator
       - brave-origin
       - host-spawn
       - fish
-      - util-linux-user
       - fontawesome-fonts-all
-      - flatpak
-      - flatpak-selinux
-      - flatpak-session-helper
       - tuned
       - tuned-utils
-      - thermald
-      - fuse-overlayfs
-      - containers-common
 
   tasks:
     - name: Skip in containers

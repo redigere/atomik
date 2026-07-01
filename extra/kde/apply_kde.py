@@ -218,7 +218,20 @@ def reconfigure_kwin():
     run("qdbus6", "org.kde.KWin", "/KWin", "reconfigure", check=False)
 
 
+def is_kde():
+    desktop = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
+    if "kde" in desktop or "plasma" in desktop:
+        return True
+    session = os.environ.get("DESKTOP_SESSION", "").lower()
+    if "kde" in session or "plasma" in session:
+        return True
+    return shutil.which("plasmashell") is not None
+
+
 def main():
+    if not is_kde():
+        log.info("skipping: not running on KDE Plasma")
+        return
     stop_plasma()
     deploy_panel_background()
     run_panels_script()

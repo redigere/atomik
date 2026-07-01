@@ -114,7 +114,20 @@ def apply_settings():
     gset("org.gnome.desktop.sound", "event-sounds", "false")
 
 
+def is_gnome():
+    desktop = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
+    if "gnome" in desktop or "unity" in desktop or "gnome-flashback" in desktop:
+        return True
+    session = os.environ.get("DESKTOP_SESSION", "").lower()
+    if "gnome" in session:
+        return True
+    return shutil.which("gnome-session") is not None
+
+
 def main():
+    if not is_gnome():
+        log.info("skipping: not running on GNOME")
+        return
     install_theme()
     apply_settings()
     log.info("done")

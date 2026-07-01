@@ -30,7 +30,7 @@ help:
 
 apply-all: apply-core apply-extra
 
-apply-extra: apply-extra-kde apply-extra-gnome apply-extra-nix apply-extra-devtools
+apply-extra: apply-extra-kde apply-extra-gnome apply-extra-nix apply-extra-codium apply-extra-devtools
 
 apply-extra-kde:
 	python3 extra/kde/apply_kde.py
