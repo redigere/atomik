@@ -529,11 +529,6 @@ atomik_repositories:
       gpgcheck=1
       gpgkey=https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
 
-atomik_flatpak_remote: flathub
-atomik_flatpak_remote_url: "https://dl.flathub.org/repo/flathub.flatpakrepo"
-atomik_flatpak_verified: []
-atomik_flatpak_overrides: {}
-
 atomik_nix_packages:
   - discord
   - easyeffects
