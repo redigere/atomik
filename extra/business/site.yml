@@ -5,8 +5,8 @@
   gather_facts: true
 
   vars:
-    business_flatpaks:
-      - com.slack.Slack
+    business_nix_packages:
+      - slack
 
   tasks:
     - name: Skip in containers
@@ -20,37 +20,31 @@
         - name: End play
           ansible.builtin.meta: end_play
 
-    - name: Add Flathub remote
+    - name: Check which Nix packages are installed
       ansible.builtin.shell: |
-        flatpak remote-add --if-not-exists flathub "https://dl.flathub.org/repo/flathub.flatpakrepo"
-      register: remote_result
-      changed_when: remote_result.rc == 0
+        /var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ ansible_user_id }}/.nix /home/{{ ansible_user_id }}/.nix-profile/bin/nix profile list 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep "^Name:" | awk '{print $2}' || true
+      become: true
+      become_user: "{{ ansible_user_id }}"
+      args:
+        executable: /bin/bash
+      register: nix_installed_list
+      changed_when: false
       failed_when: false
 
-    - name: Install business Flatpak applications
+    - name: Install business Nix packages
       ansible.builtin.shell: |
-        flatpak install -y flathub {{ item }}
-      loop: "{{ business_flatpaks }}"
+        set -euo pipefail
+        NIXPKGS_ALLOW_UNFREE=1 /var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ ansible_user_id }}/.nix /home/{{ ansible_user_id }}/.nix-profile/bin/nix profile add --impure nixpkgs#{{ item }}
+      become: true
+      become_user: "{{ ansible_user_id }}"
+      args:
+        executable: /bin/bash
+      environment:
+        NIXPKGS_ALLOW_UNFREE: "1"
+      loop: "{{ business_nix_packages }}"
       loop_control:
         label: "{{ item }}"
       register: business_install
       changed_when: business_install.rc == 0
       failed_when: false
-
-    - name: Reset Flatpak overrides for business apps
-      ansible.builtin.shell: flatpak override --user --reset {{ item }}
-      loop: "{{ business_flatpaks }}"
-      loop_control:
-        label: "{{ item }}"
-      failed_when: false
-
-    - name: Apply Slack override
-      ansible.builtin.shell: >
-        flatpak override --user com.slack.Slack
-        --share=ipc
-        --socket=fallback-x11
-        --socket=wayland
-        --socket=pulseaudio
-        --device=dri
-        --talk-name=org.kde.StatusNotifierWatcher
-        --env=GTK_USE_PORTAL=1
+      when: item not in (nix_installed_list.stdout_lines | default([]))

@@ -13,6 +13,3 @@
 
 - name: Manage RPM-OSTree packages
   ansible.builtin.include_tasks: rpm_ostree.yml
-
-- name: Setup JetBrains Toolbox
-  ansible.builtin.include_tasks: jetbrains_toolbox.yml
