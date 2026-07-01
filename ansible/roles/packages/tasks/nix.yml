@@ -143,7 +143,7 @@
 - name: Install missing Nix packages
   ansible.builtin.shell: |
     set -euo pipefail
-    /var/home/{{ atomik_user }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ atomik_user }}/.nix /home/{{ atomik_user }}/.nix-profile/bin/nix profile install nixpkgs#{{ item }}
+    /var/home/{{ atomik_user }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ atomik_user }}/.nix /home/{{ atomik_user }}/.nix-profile/bin/nix profile add nixpkgs#{{ item }}
   become: true
   become_user: "{{ atomik_user }}"
   args:
