@@ -1,5 +1,4 @@
 ---
-# Idempotency checks
 - name: Check if Nix store exists
   ansible.builtin.stat:
     path: "/var/home/{{ atomik_user }}/.nix/store"
@@ -16,7 +15,6 @@
   register: nix_profile_check
   failed_when: false
 
-# Setup nix-user-chroot (if missing)
 - name: Create nix-user-chroot directory
   ansible.builtin.file:
     path: "/var/home/{{ atomik_user }}/.nix-user-chroot/bin"
@@ -35,7 +33,6 @@
     group: "{{ atomik_user }}"
   when: not nix_chroot_bin.stat.exists
 
-# Install Nix (if missing)
 - name: Create Nix root directory
   ansible.builtin.file:
     path: "/var/home/{{ atomik_user }}/.nix"
@@ -90,7 +87,6 @@
     state: absent
   when: not nix_store.stat.exists
 
-# Configure Nix
 - name: Ensure nix.conf has experimental features
   ansible.builtin.copy:
     content: |
@@ -104,7 +100,6 @@
 - name: Ensure Nix fish shell integration
   ansible.builtin.copy:
     content: |
-      # Nix user-level package manager
       if test -f /home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.fish
           source /home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.fish
       end
@@ -114,7 +109,6 @@
     mode: "0644"
     backup: false
 
-# Add channels (if missing)
 - name: Add Nix channels
   ansible.builtin.shell: |
     set -euo pipefail
@@ -128,7 +122,6 @@
   changed_when: nix_channel.rc == 0
   failed_when: false
 
-# Install packages (skip if already installed)
 - name: Check which Nix packages are installed
   ansible.builtin.shell: |
     /var/home/{{ atomik_user }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ atomik_user }}/.nix /home/{{ atomik_user }}/.nix-profile/bin/nix profile list 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep "^Name:" | awk '{print $2}' || true
