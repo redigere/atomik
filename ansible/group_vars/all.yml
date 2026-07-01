@@ -534,7 +534,12 @@ atomik_flatpak_remote_url: "https://dl.flathub.org/repo/flathub.flatpakrepo"
 atomik_flatpak_verified: []
 atomik_flatpak_overrides: {}
 
-atomik_nix_packages: []
+atomik_nix_packages:
+  - discord
+  - easyeffects
+  - obs-studio
+  - slack
+  - vlc
 
 atomik_firewall_services:
   - ssh

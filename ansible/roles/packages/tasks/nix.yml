@@ -4,19 +4,28 @@
     path: "/var/home/{{ atomik_user }}/.nix-profile/bin/nix"
   register: nix_binary
 
-- name: Install Nix (single-user mode)
+- name: Setup Nix store directory
   when: not nix_binary.stat.exists
   block:
+    - name: Create /nix store directory
+      ansible.builtin.file:
+        path: /nix
+        state: directory
+        owner: "{{ atomik_user }}"
+        group: "{{ atomik_user }}"
+        mode: "0755"
+
     - name: Download Nix installer
       ansible.builtin.get_url:
         url: https://nixos.org/nix/install
-        dest: /tmp/nix-install.sh
+        dest: "/tmp/nix-install-{{ atomik_user }}.sh"
         mode: "0755"
 
-    - name: Run Nix installer
+    - name: Run Nix installer (user-level)
       ansible.builtin.shell: |
         set -euo pipefail
-        sh /tmp/nix-install.sh --no-daemon --yes
+        export HOME="/var/home/{{ atomik_user }}"
+        sh /tmp/nix-install-{{ atomik_user }}.sh --no-daemon --yes
       become: true
       become_user: "{{ atomik_user }}"
       args:
@@ -24,30 +33,36 @@
       register: nix_install
       changed_when: nix_install.rc == 0
 
-    - name: Clean up installer
+    - name: Remove installer
       ansible.builtin.file:
-        path: /tmp/nix-install.sh
+        path: "/tmp/nix-install-{{ atomik_user }}.sh"
         state: absent
 
 - name: Ensure Nix profile scripts are sourced
-  ansible.builtin.lineinfile:
-    path: "/var/home/{{ atomik_user }}/.config/fish/conf.d/nix.fish"
-    create: true
-    line: "test -f /var/home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.fish && source /var/home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.fish"
+  ansible.builtin.copy:
+    content: |
+      # Nix user-level package manager
+      if test -f /var/home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.fish
+          source /var/home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.fish
+      end
+    dest: "/var/home/{{ atomik_user }}/.config/fish/conf.d/nix.fish"
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0644"
+    backup: false
 
 - name: Add Nix channels
   ansible.builtin.shell: |
     set -euo pipefail
-    . /var/home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.sh
+    export HOME="/var/home/{{ atomik_user }}"
+    . .nix-profile/etc/profile.d/nix.sh 2>/dev/null || true
     nix-channel --list 2>/dev/null | grep -q "nixpkgs" || nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
     nix-channel --update
   become: true
   become_user: "{{ atomik_user }}"
   args:
     executable: /bin/bash
+    chdir: "/var/home/{{ atomik_user }}"
   register: nix_channel
   changed_when: nix_channel.rc == 0
   failed_when: false
@@ -55,12 +70,14 @@
 - name: Install Nix packages
   ansible.builtin.shell: |
     set -euo pipefail
-    . /var/home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.sh
+    export HOME="/var/home/{{ atomik_user }}"
+    . .nix-profile/etc/profile.d/nix.sh 2>/dev/null || true
     nix profile install nixpkgs#{{ item }}
   become: true
   become_user: "{{ atomik_user }}"
   args:
     executable: /bin/bash
+    chdir: "/var/home/{{ atomik_user }}"
   loop: "{{ atomik_nix_packages }}"
   loop_control:
     label: "{{ item }}"

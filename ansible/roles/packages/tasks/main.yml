@@ -14,9 +14,6 @@
 - name: Manage RPM-OSTree packages
   ansible.builtin.include_tasks: rpm_ostree.yml
 
-- name: Manage Flatpak packages
-  ansible.builtin.include_tasks: flatpak.yml
-
 - name: Setup Nix package manager
   ansible.builtin.include_tasks: nix.yml
 
