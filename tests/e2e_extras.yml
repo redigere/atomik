@@ -27,15 +27,15 @@
         that:
           - business_check.stat.exists
 
-    - name: Verify flatpak module structure
+    - name: Verify nix module structure
       ansible.builtin.stat:
-        path: "{{ project_root }}/extra/flatpak/site.yml"
-      register: flatpak_check
+        path: "{{ project_root }}/extra/nix/site.yml"
+      register: nix_check
 
-    - name: Assert flatpak module present
+    - name: Assert nix module present
       ansible.builtin.assert:
         that:
-          - flatpak_check.stat.exists
+          - nix_check.stat.exists
 
     - name: Verify codium module structure
       ansible.builtin.stat:
@@ -109,28 +109,28 @@
     - name: Test gaming module variables
       ansible.builtin.set_fact:
         test_gaming:
-          flatpaks:
-            - com.discordapp.Discord
-            - com.heroicgameslauncher.hgl
+          nix_packages:
+            - discord
+            - heroic
 
     - name: Assert gaming variables valid
       ansible.builtin.assert:
         that:
-          - test_gaming.flatpaks | length == 2
-          - "'com.discordapp.Discord' in test_gaming.flatpaks"
-          - "'com.heroicgameslauncher.hgl' in test_gaming.flatpaks"
+          - test_gaming.nix_packages | length == 2
+          - "'discord' in test_gaming.nix_packages"
+          - "'heroic' in test_gaming.nix_packages"
 
     - name: Test business module variables
       ansible.builtin.set_fact:
         test_business:
-          flatpaks:
-            - com.slack.Slack
+          nix_packages:
+            - slack
 
     - name: Assert business variables valid
       ansible.builtin.assert:
         that:
-          - test_business.flatpaks | length == 1
-          - "'com.slack.Slack' in test_business.flatpaks"
+          - test_business.nix_packages | length == 1
+          - "'slack' in test_business.nix_packages"
 
     - name: Test debloat module variables
       ansible.builtin.set_fact:
@@ -150,15 +150,13 @@
       ansible.builtin.set_fact:
         test_packages:
           packages:
-            - firewalld
             - brave-origin
             - fish
 
     - name: Assert packages variables valid
       ansible.builtin.assert:
         that:
-          - test_packages.packages | length >= 3
-          - "'firewalld' in test_packages.packages"
+          - test_packages.packages | length >= 2
           - "'brave-origin' in test_packages.packages"
 
     - name: All extra module e2e tests passed
