@@ -4,13 +4,47 @@
     path: "/var/home/{{ atomik_user }}/.nix-profile/bin/nix"
   register: nix_binary
 
-- name: Setup Nix store directory
+- name: Check if nix-user-chroot is available
+  ansible.builtin.stat:
+    path: "/var/home/{{ atomik_user }}/.nix-user-chroot/bin/nix-user-chroot"
+  register: nix_chroot_stat
+
+- name: Setup nix-user-chroot
+  when: not nix_chroot_stat.stat.exists
+  block:
+    - name: Create nix-user-chroot directory
+      ansible.builtin.file:
+        path: "/var/home/{{ atomik_user }}/.nix-user-chroot/bin"
+        state: directory
+        owner: "{{ atomik_user }}"
+        group: "{{ atomik_user }}"
+        mode: "0755"
+
+    - name: Download nix-user-chroot
+      ansible.builtin.get_url:
+        url: "https://github.com/nix-community/nix-user-chroot/releases/download/2.1.1/nix-user-chroot-bin-2.1.1-x86_64-unknown-linux-musl"
+        dest: "/var/home/{{ atomik_user }}/.nix-user-chroot/bin/nix-user-chroot"
+        mode: "0755"
+        owner: "{{ atomik_user }}"
+        group: "{{ atomik_user }}"
+
+- name: Setup Nix in user space
   when: not nix_binary.stat.exists
   block:
-    - name: Create /nix store directory
+    - name: Create Nix root directory
       ansible.builtin.file:
-        path: /nix
+        path: "/var/home/{{ atomik_user }}/.nix"
         state: directory
+        owner: "{{ atomik_user }}"
+        group: "{{ atomik_user }}"
+        mode: "0755"
+
+    - name: Create nix wrapper script
+      ansible.builtin.copy:
+        content: |
+          #!/bin/sh
+          exec /var/home/{{ atomik_user }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ atomik_user }}/.nix -- /nix/var/nix/profiles/default/bin/nix "$@"
+        dest: "/var/home/{{ atomik_user }}/.local/bin/nix"
         owner: "{{ atomik_user }}"
         group: "{{ atomik_user }}"
         mode: "0755"
@@ -21,11 +55,11 @@
         dest: "/tmp/nix-install-{{ atomik_user }}.sh"
         mode: "0755"
 
-    - name: Run Nix installer (user-level)
+    - name: Run Nix installer via nix-user-chroot
       ansible.builtin.shell: |
         set -euo pipefail
         export HOME="/var/home/{{ atomik_user }}"
-        sh /tmp/nix-install-{{ atomik_user }}.sh --no-daemon --yes
+        /var/home/{{ atomik_user }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ atomik_user }}/.nix -- sh /tmp/nix-install-{{ atomik_user }}.sh --no-daemon --yes
       become: true
       become_user: "{{ atomik_user }}"
       args:
