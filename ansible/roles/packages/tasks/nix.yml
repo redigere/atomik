@@ -45,6 +45,14 @@
     mode: "0755"
   when: not nix_store.stat.exists
 
+- name: Create .local/bin directory
+  ansible.builtin.file:
+    path: "/var/home/{{ atomik_user }}/.local/bin"
+    state: directory
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0755"
+
 - name: Create nix helper script
   ansible.builtin.copy:
     content: |
@@ -55,7 +63,6 @@
     owner: "{{ atomik_user }}"
     group: "{{ atomik_user }}"
     mode: "0755"
-  when: not nix_store.stat.exists
 
 - name: Download Nix installer
   ansible.builtin.get_url:
@@ -124,7 +131,7 @@
 # Install packages (skip if already installed)
 - name: Check which Nix packages are installed
   ansible.builtin.shell: |
-    /var/home/{{ atomik_user }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ atomik_user }}/.nix /home/{{ atomik_user }}/.nix-profile/bin/nix profile list 2>/dev/null | awk '{print $4}' | cut -d'#' -f2 || true
+    /var/home/{{ atomik_user }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ atomik_user }}/.nix /home/{{ atomik_user }}/.nix-profile/bin/nix profile list 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep "^Name:" | awk '{print $2}' || true
   become: true
   become_user: "{{ atomik_user }}"
   args:
