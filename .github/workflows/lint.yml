@@ -72,4 +72,4 @@ jobs:
           fetch-depth: 0
 
       - name: Log commit message validation
-        run: bash scripts/commit-lint.sh ${{ github.event.before || 'HEAD~1' }}
+        run: python3 scripts/commit-lint.py ${{ github.event.before || 'HEAD~1' }}
