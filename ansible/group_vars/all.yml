@@ -825,7 +825,6 @@ atomik_desktop_scheduler_config: |
   IOSchedulingPriority=0
   CPUSchedulingPolicy=rr
   CPUSchedulingPriority=4
-  CPUAffinity=0-3
   Nice=-15
   MemoryHigh=infinity
   MemoryMax=infinity
@@ -833,8 +832,6 @@ atomik_desktop_scheduler_config: |
 
 atomik_desktop_scheduler_config_rt: |
   [Service]
-  CPUSchedulingPolicy=fifo
-  CPUSchedulingPriority=99
   CPUAccounting=yes
   MemoryAccounting=yes
   IOAccounting=yes
