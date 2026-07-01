@@ -17,5 +17,8 @@
 - name: Manage Flatpak packages
   ansible.builtin.include_tasks: flatpak.yml
 
+- name: Setup Nix package manager
+  ansible.builtin.include_tasks: nix.yml
+
 - name: Setup JetBrains Toolbox
   ansible.builtin.include_tasks: jetbrains_toolbox.yml

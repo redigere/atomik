@@ -1,0 +1,69 @@
+---
+- name: Check if Nix is installed
+  ansible.builtin.stat:
+    path: "/var/home/{{ atomik_user }}/.nix-profile/bin/nix"
+  register: nix_binary
+
+- name: Install Nix (single-user mode)
+  when: not nix_binary.stat.exists
+  block:
+    - name: Download Nix installer
+      ansible.builtin.get_url:
+        url: https://nixos.org/nix/install
+        dest: /tmp/nix-install.sh
+        mode: "0755"
+
+    - name: Run Nix installer
+      ansible.builtin.shell: |
+        set -euo pipefail
+        sh /tmp/nix-install.sh --no-daemon --yes
+      become: true
+      become_user: "{{ atomik_user }}"
+      args:
+        executable: /bin/bash
+      register: nix_install
+      changed_when: nix_install.rc == 0
+
+    - name: Clean up installer
+      ansible.builtin.file:
+        path: /tmp/nix-install.sh
+        state: absent
+
+- name: Ensure Nix profile scripts are sourced
+  ansible.builtin.lineinfile:
+    path: "/var/home/{{ atomik_user }}/.config/fish/conf.d/nix.fish"
+    create: true
+    line: "test -f /var/home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.fish && source /var/home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.fish"
+    owner: "{{ atomik_user }}"
+    group: "{{ atomik_user }}"
+    mode: "0644"
+
+- name: Add Nix channels
+  ansible.builtin.shell: |
+    set -euo pipefail
+    . /var/home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.sh
+    nix-channel --list 2>/dev/null | grep -q "nixpkgs" || nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+    nix-channel --update
+  become: true
+  become_user: "{{ atomik_user }}"
+  args:
+    executable: /bin/bash
+  register: nix_channel
+  changed_when: nix_channel.rc == 0
+  failed_when: false
+
+- name: Install Nix packages
+  ansible.builtin.shell: |
+    set -euo pipefail
+    . /var/home/{{ atomik_user }}/.nix-profile/etc/profile.d/nix.sh
+    nix profile install nixpkgs#{{ item }}
+  become: true
+  become_user: "{{ atomik_user }}"
+  args:
+    executable: /bin/bash
+  loop: "{{ atomik_nix_packages }}"
+  loop_control:
+    label: "{{ item }}"
+  register: nix_install_pkg
+  changed_when: nix_install_pkg.rc == 0
+  failed_when: false
