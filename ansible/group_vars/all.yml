@@ -1094,6 +1094,15 @@ atomik_gnome_dconf_full:
   - path: /org/freedesktop/tracker/miner/files/enable-fs-watchers
     value: "false"
 
+atomik_critical_services:
+  - NetworkManager
+  - systemd-resolved
+  - upower
+  - bluetooth
+  - sshd
+  - gdm
+  - sddm
+
 atomik_masked_services:
   - abrtd
   - abrt-journal-core

@@ -552,20 +552,11 @@ jobs:
           print(f'Packages: {len(packages)} packages to install')
           "
 
-      - name: Log masked services validation
-        run: |
-          python3 -c "
-          import yaml
-          with open('ansible/group_vars/all.yml') as f:
-              cfg = yaml.safe_load(f)
-          masked = cfg.get('atomik_masked_services', [])
-          critical = ['NetworkManager', 'bluetooth', 'systemd-resolved', 'sshd', 'gdm', 'sddm']
-          conflicts = [s for s in masked if s in critical or s.rsplit('.', 1)[0] in critical]
-          if conflicts:
-              print(f'CRITICAL: Masked services conflict: {conflicts}')
-              exit(1)
-          print(f'Masked services OK: {len(masked)} services, no critical conflicts')
-          "
+      - name: Validate masked services
+        run: python3 tests/validate_masked_services.py
+
+      - name: Validate tuned services
+        run: python3 tests/validate_tuned_services.py
 
       - name: Log toolbox gaming test
         run: |

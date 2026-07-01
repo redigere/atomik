@@ -51,6 +51,9 @@
 - name: Mask non-essential services
   ansible.builtin.include_tasks: mask_services.yml
 
+- name: Ensure critical services are active
+  ansible.builtin.include_tasks: ensure_critical_services.yml
+
 - name: Apply audio latency tuning
   ansible.builtin.include_tasks: audio.yml
 

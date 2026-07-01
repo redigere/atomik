@@ -1,0 +1,10 @@
+---
+- name: Ensure critical services are unmasked and enabled
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+    masked: false
+  loop: "{{ atomik_critical_services }}"
+  register: ensure_result
+  failed_when: ensure_result is failed and 'Could not find the requested service' not in ensure_result.msg
