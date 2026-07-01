@@ -2,6 +2,7 @@
 """Install Nordic GTK theme and apply GNOME macOS-like configuration."""
 
 import io
+import logging
 import os
 import shutil
 import subprocess
@@ -10,6 +11,9 @@ import tarfile
 import tempfile
 import urllib.request
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+log = logging.getLogger("gnome")
 
 HOME = Path.home()
 THEME_DIR = HOME / ".themes" / "Nordic"
@@ -30,44 +34,40 @@ def gset(schema, key, value):
 
 def install_theme():
     if THEME_DIR.exists():
-        print("Nordic theme already present.")
-    else:
-        print("Cloning Nordic theme ...")
-        tmp = tempfile.mkdtemp()
-        try:
-            subprocess.run(
-                ["git", "clone", "--depth", "1", "--single-branch", REPO_URL, f"{tmp}/Nordic"],
-                check=True,
-            )
-            THEME_DIR.mkdir(parents=True, exist_ok=True)
-            for subdir in ["gtk-3.0", "gtk-4.0", "gnome-shell", "metacity-1", "assets"]:
-                src = Path(tmp) / "Nordic" / subdir
-                if src.exists():
-                    shutil.copytree(src, THEME_DIR / subdir, dirs_exist_ok=True)
-            index = Path(tmp) / "Nordic" / "index.theme"
-            if index.exists():
-                shutil.copy2(index, THEME_DIR)
-            print("Nordic theme installed.")
-        finally:
-            shutil.rmtree(tmp, ignore_errors=True)
+        return
+    log.info("installing Nordic theme")
+    tmp = tempfile.mkdtemp()
+    try:
+        subprocess.run(
+            ["git", "clone", "--depth", "1", "--single-branch", REPO_URL, f"{tmp}/Nordic"],
+            check=True,
+        )
+        THEME_DIR.mkdir(parents=True, exist_ok=True)
+        for subdir in ["gtk-3.0", "gtk-4.0", "gnome-shell", "metacity-1", "assets"]:
+            src = Path(tmp) / "Nordic" / subdir
+            if src.exists():
+                shutil.copytree(src, THEME_DIR / subdir, dirs_exist_ok=True)
+        index = Path(tmp) / "Nordic" / "index.theme"
+        if index.exists():
+            shutil.copy2(index, THEME_DIR)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
     if CURSOR_DIR.exists():
-        print("Nordic-cursors already present.")
-    else:
-        print("Installing Nordic-cursors...")
-        ICON_DIR.mkdir(parents=True, exist_ok=True)
-        tmp2 = tempfile.mkdtemp()
-        try:
-            req = urllib.request.Request(CURSORS_URL, headers={"User-Agent": "Mozilla/5.0"})
-            data = urllib.request.urlopen(req).read()
-            with tarfile.open(fileobj=io.BytesIO(data), mode="r:xz") as tar:
-                tar.extractall(path=tmp2)
-            src_cursor = Path(tmp2) / "Nordic-cursors"
-            if src_cursor.exists():
-                shutil.copytree(src_cursor, CURSOR_DIR, dirs_exist_ok=True)
-            print("Nordic-cursors installed.")
-        finally:
-            shutil.rmtree(tmp2, ignore_errors=True)
+        return
+    log.info("installing Nordic-cursors")
+    ICON_DIR.mkdir(parents=True, exist_ok=True)
+    tmp2 = tempfile.mkdtemp()
+    try:
+        req = urllib.request.Request(CURSORS_URL, headers={"User-Agent": "Mozilla/5.0"})
+        data = urllib.request.urlopen(req).read()
+        with tarfile.open(fileobj=io.BytesIO(data), mode="r:xz") as tar:
+            tar.extractall(path=tmp2)
+        src_cursor = Path(tmp2) / "Nordic-cursors"
+        if src_cursor.exists():
+            shutil.copytree(src_cursor, CURSOR_DIR, dirs_exist_ok=True)
+    finally:
+        shutil.rmtree(tmp2, ignore_errors=True)
 
 
 def apply_settings():
@@ -117,7 +117,7 @@ def apply_settings():
 def main():
     install_theme()
     apply_settings()
-    print("GNOME Full-Nordic config applied.")
+    log.info("done")
 
 
 if __name__ == "__main__":

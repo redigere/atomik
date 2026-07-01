@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """Apply KDE Plasma panels, theme, and Nordic configuration."""
 
+import gzip
 import json
+import logging
 import os
 import shutil
 import subprocess
 import sys
 import time
-import gzip
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+log = logging.getLogger("kde")
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 HOME = Path.home()
@@ -224,7 +228,7 @@ def main():
     apply_theme_settings()
     deploy_konsole_theme()
     reconfigure_kwin()
-    print("KDE Full-Nordic theme applied.")
+    log.info("done")
 
 
 if __name__ == "__main__":

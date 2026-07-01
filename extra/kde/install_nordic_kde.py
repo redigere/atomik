@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """Clone and install Nordic, Nordic-kDE, and Tela-circle themes from source."""
 
+import logging
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+log = logging.getLogger("kde")
 
 HOME = Path.home()
 LOCAL_SHARE = HOME / ".local/share"
@@ -113,7 +117,7 @@ Parent=FALLBACK/
                 check=False,
             )
 
-        print("Nordic KDE installed from source.")
+        log.info("done")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

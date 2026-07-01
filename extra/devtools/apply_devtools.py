@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
+import logging
 import os
 import subprocess
 import sys
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+log = logging.getLogger("devtools")
 
 HOME = os.path.expanduser("~")
 BASHRC_D = os.path.join(HOME, ".bashrc.d")
@@ -11,44 +15,34 @@ BASHRC = os.path.join(HOME, ".bashrc")
 
 
 def run(cmd, check=True):
-    print(f"  -> {cmd[:120]}...")
-    return subprocess.run(cmd, shell=True, check=check, text=True,
-                          capture_output=True)
+    return subprocess.run(cmd, shell=True, check=check, text=True, capture_output=True)
 
 
 def mkdir(path):
     os.makedirs(path, exist_ok=True)
-    print(f"  -> created {path}")
 
 
 def write_file(path, content):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         f.write(content)
-    print(f"  -> wrote {path}")
 
 
 def remove(path):
     if os.path.exists(path):
         os.remove(path)
-        print(f"  -> removed {path}")
 
 
 def setup_shell():
-    print("[shell] Configuring shell environment")
     mkdir(BASHRC_D)
     mkdir(FISH_CONFD)
 
-    # Migrate old .bash.d
     if os.path.isdir(BASH_D) and not os.path.islink(BASH_D):
         run(f"cp -rP {BASH_D}/* {BASHRC_D}/ || true")
         run(f"rm -rf {BASH_D}")
-        print("  -> migrated .bash.d to .bashrc.d")
     if not os.path.islink(BASH_D) and not os.path.exists(BASH_D):
         os.symlink(".bashrc.d", BASH_D)
-        print("  -> symlinked .bash.d -> .bashrc.d")
 
-    # JetBrains aliases
     write_file(os.path.join(BASHRC_D, "jetbrains.sh"),
                'if command -v dex >/dev/null 2>&1; then\n'
                '    alias jetbrains-toolbox="dex $HOME/.local/share/applications/jetbrains-toolbox.desktop"\n'
@@ -63,7 +57,6 @@ def setup_shell():
                '    alias android-studio "dex $HOME/.local/share/applications/jetbrains-studio-dc863395-7115-4ff2-948e-3f642bc481dd.desktop"\n'
                'end\n')
 
-    # Remove old ATOMIK BASH.D block from .bashrc
     if os.path.isfile(BASHRC):
         with open(BASHRC) as f:
             content = f.read()
@@ -79,7 +72,6 @@ def setup_shell():
                 new_content.append(line)
         content = "".join(new_content)
 
-        # Add ATOMIK BASHRC.D block if not present
         if "# BEGIN ATOMIK BASHRC.D" not in content:
             block = (
                 "# BEGIN ATOMIK BASHRC.D\n"
@@ -95,9 +87,7 @@ def setup_shell():
             content += "\n" + block
         with open(BASHRC, "w") as f:
             f.write(content)
-        print("  -> updated .bashrc")
 
-    # Configure JetBrains terminal
     import glob
     jetbrains_dirs = glob.glob(
         os.path.join(HOME, ".var", "app", "*JetBrains*", "config", "options")
@@ -121,10 +111,8 @@ def setup_shell():
 def install_nvm():
     nvm_sh = os.path.join(HOME, ".nvm", "nvm.sh")
     if not os.path.isfile(nvm_sh):
-        print("[nvm] Installing nvm")
+        log.info("installing nvm")
         run("curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash")
-    else:
-        print("[nvm] Already installed")
     write_file(os.path.join(BASHRC_D, "nvm.sh"),
                'export NVM_DIR="$HOME/.nvm"\n'
                '[ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"\n'
@@ -177,10 +165,8 @@ def install_nvm():
 def install_pnpm():
     pnpm_bin = os.path.join(HOME, ".local", "share", "pnpm", "bin", "pnpm")
     if not os.path.isfile(pnpm_bin):
-        print("[pnpm] Installing pnpm")
+        log.info("installing pnpm")
         run("export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\" && npm install -g pnpm")
-    else:
-        print("[pnpm] Already installed")
     write_file(os.path.join(BASHRC_D, "pnpm.sh"),
                'export PNPM_HOME="$HOME/.local/share/pnpm"\n'
                'case ":$PATH:" in\n'
@@ -197,10 +183,8 @@ def install_pnpm():
 def install_rustup():
     cargo_bin = os.path.join(HOME, ".cargo", "bin", "cargo")
     if not os.path.isfile(cargo_bin):
-        print("[rust] Installing rustup")
+        log.info("installing rustup")
         run("curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y")
-    else:
-        print("[rust] Already installed")
     write_file(os.path.join(BASHRC_D, "cargo.sh"),
                'if [ -f "$HOME/.cargo/env" ]; then\n'
                '    . "$HOME/.cargo/env"\n'
@@ -214,10 +198,8 @@ def install_rustup():
 def install_opencode():
     opencode_bin = os.path.join(HOME, ".opencode", "bin", "opencode")
     if not os.path.isfile(opencode_bin):
-        print("[opencode] Installing opencode")
+        log.info("installing opencode")
         run("mkdir -p \"$HOME/.opencode/bin\" && curl -fsSL https://opencode.ai/install | sh")
-    else:
-        print("[opencode] Already installed")
     write_file(os.path.join(BASHRC_D, "opencode.sh"),
                'export PATH="$HOME/.opencode/bin:$PATH"\n')
     write_file(os.path.join(FISH_CONFD, "opencode.fish"),
@@ -229,10 +211,8 @@ def install_opencode():
 def install_sdkman():
     sdkman_init = os.path.join(HOME, ".sdkman", "bin", "sdkman-init.sh")
     if not os.path.isfile(sdkman_init):
-        print("[sdkman] Installing sdkman")
+        log.info("installing sdkman")
         run("curl -s \"https://get.sdkman.io\" | bash")
-    else:
-        print("[sdkman] Already installed")
     write_file(os.path.join(BASHRC_D, "sdkman.sh"),
                'export SDKMAN_DIR="$HOME/.sdkman"\n'
                '[[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]] && source "$SDKMAN_DIR/bin/sdkman-init.sh"\n')
@@ -278,18 +258,13 @@ def install_sdkman():
 
 
 def main():
-    steps = [
-        ("Shell environment", setup_shell),
-        ("nvm", install_nvm),
-        ("pnpm", install_pnpm),
-        ("Rustup", install_rustup),
-        ("Opencode", install_opencode),
-        ("SDKMAN", install_sdkman),
-    ]
-    for name, fn in steps:
-        print(f"\n=== {name} ===")
-        fn()
-    print("\nDone. Restart your shell or run: exec fish")
+    setup_shell()
+    install_nvm()
+    install_pnpm()
+    install_rustup()
+    install_opencode()
+    install_sdkman()
+    log.info("done")
 
 
 if __name__ == "__main__":

@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Revert KDE Plasma to Breeze defaults."""
 
+import logging
 import shutil
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+log = logging.getLogger("kde")
 
 HOME = Path.home()
 LOCAL_SHARE = HOME / ".local/share"
@@ -69,7 +73,7 @@ def main():
         "org.kde.PlasmaShell", "evaluateScript", "s", script, check=False)
 
     run("qdbus6", "org.kde.KWin", "/KWin", "reconfigure", check=False)
-    print("Reverted to Breeze. Top panel removed.")
+    log.info("done")
 
 
 if __name__ == "__main__":
