@@ -3,8 +3,9 @@
 .PHONY: apply-extra apply-extra-kde apply-extra-gnome apply-extra-flatpak apply-extra-codium apply-extra-devtools
 
 PROJECT_DIR := $(shell pwd)
-ANSIBLE_PLAYBOOK = ansible-playbook $(PROJECT_DIR)/ansible/site.yml -i $(PROJECT_DIR)/ansible/inventories/localhost/hosts.yml
-E2E_PLAYBOOK = ansible-playbook $(PROJECT_DIR)/tests/e2e.yml -i $(PROJECT_DIR)/ansible/inventories/localhost/hosts.yml -c local
+ANSIBLE_CONFIG = $(PROJECT_DIR)/ansible/ansible.cfg
+ANSIBLE_PLAYBOOK = env ANSIBLE_CONFIG=$(ANSIBLE_CONFIG) ansible-playbook $(PROJECT_DIR)/ansible/site.yml -i $(PROJECT_DIR)/ansible/inventories/localhost/hosts.yml
+E2E_PLAYBOOK = env ANSIBLE_CONFIG=$(ANSIBLE_CONFIG) ansible-playbook $(PROJECT_DIR)/tests/e2e.yml -i $(PROJECT_DIR)/ansible/inventories/localhost/hosts.yml -c local
 all: lint test
 
 help:
