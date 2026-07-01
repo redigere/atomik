@@ -1,0 +1,75 @@
+---
+name: lint
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint-playbook:
+    name: lint playbook
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Ansible and Python deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ansible-core python3-pip
+          python3 -m venv /tmp/atomik-venv
+          /tmp/atomik-venv/bin/pip install --quiet pyyaml
+
+      - name: Install collections
+        run: ansible-galaxy collection install ansible.posix community.general
+
+      - name: Install linters
+        run: pip install -q ansible-lint yamllint
+
+      - name: Log syntax check site yml
+        run: ansible-playbook ansible/site.yml --syntax-check -i ansible/inventories/localhost/hosts.yml
+
+      - name: Log syntax check e2e yml
+        run: ansible-playbook tests/e2e.yml --syntax-check -i ansible/inventories/localhost/hosts.yml
+
+      - name: Log ansible lint results
+        run: ansible-lint ansible/site.yml --skip-list var-naming,risky-shell-pipe,no-changed-when,command-instead-of-module,command-instead-of-shell,yaml[line-length],jinja[spacing],yaml[empty-lines],no-handler
+
+  lint-yaml:
+    name: lint yaml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install linters
+        run: pip install -q yamllint
+
+      - name: Log yaml lint results
+        run: |
+          yamllint --strict .yamllint
+          yamllint --strict ansible/site.yml
+          yamllint --strict ansible/group_vars/all.yml
+          yamllint --strict tests/e2e.yml
+          yamllint --strict tests/e2e_extras.yml
+
+  lint-commit:
+    name: lint commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Log commit message validation
+        run: bash scripts/commit-lint.sh ${{ github.event.before || 'HEAD~1' }}
