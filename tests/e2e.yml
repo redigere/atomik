@@ -152,8 +152,8 @@
     - name: Assert packages sub-tasks present
       ansible.builtin.assert:
         that:
-          - packages_tasks.files | length >= 3
-        fail_msg: "Expected at least 3 packages tasks, found {{ packages_tasks.files | length }}"
+          - packages_tasks.files | length >= 2
+        fail_msg: "Expected at least 2 packages tasks, found {{ packages_tasks.files | length }}"
 
     - name: Test security role tasks exist
       ansible.builtin.find:
@@ -167,19 +167,20 @@
           - security_tasks.files | length >= 10
         fail_msg: "Expected at least 10 security tasks, found {{ security_tasks.files | length }}"
 
-    - name: Test flatpak config parsing
+    - name: Test nix config parsing
       ansible.builtin.set_fact:
-        test_flatpak:
-          remote: flathub
-          remote_url: "https://dl.flathub.org/repo/flathub.flatpakrepo"
-          verified: []
-          overrides: {}
+        test_nix:
+          packages:
+            - discord
+            - easyeffects
+            - obs-studio
+            - slack
+            - vlc
 
-    - name: Assert flatpak config valid
+    - name: Assert nix config valid
       ansible.builtin.assert:
         that:
-          - test_flatpak.verified | length == 0
-          - test_flatpak.overrides | length == 0
+          - test_nix.packages | length >= 5
 
     - name: Test sysctl config parsing
       ansible.builtin.set_fact:
