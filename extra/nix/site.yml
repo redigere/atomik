@@ -155,11 +155,13 @@
     - name: Install missing Nix packages
       ansible.builtin.shell: |
         set -euo pipefail
-        /var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ ansible_user_id }}/.nix /home/{{ ansible_user_id }}/.nix-profile/bin/nix profile add nixpkgs#{{ item }}
+        NIXPKGS_ALLOW_UNFREE=1 /var/home/{{ ansible_user_id }}/.nix-user-chroot/bin/nix-user-chroot /var/home/{{ ansible_user_id }}/.nix /home/{{ ansible_user_id }}/.nix-profile/bin/nix profile add --impure nixpkgs#{{ item }}
       become: true
       become_user: "{{ ansible_user_id }}"
       args:
         executable: /bin/bash
+      environment:
+        NIXPKGS_ALLOW_UNFREE: "1"
       loop: "{{ atomik_nix_packages }}"
       loop_control:
         label: "{{ item }}"

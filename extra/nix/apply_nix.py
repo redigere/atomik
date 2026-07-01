@@ -4,13 +4,12 @@
 import os
 import subprocess
 import sys
-import shutil
 from pathlib import Path
 
 USER = os.environ.get("USER", os.path.basename(os.path.expanduser("~")))
 HOME = Path(f"/var/home/{USER}")
 NIX_STORE = HOME / ".nix" / "store"
-NIX_CHROOT = HOME / ".nix-user-chroot" / "bin" / "nix-user-chroot"
+NIX_CHROOT_BIN = HOME / ".nix-user-chroot" / "bin" / "nix-user-chroot"
 NIX_ROOT = HOME / ".nix"
 NIX_HELPER = HOME / ".local" / "bin" / "nix"
 NIX_CONF = HOME / ".config" / "nix" / "nix.conf"
@@ -32,22 +31,24 @@ def run(*args, check=False, **kwargs):
     return subprocess.run(args, check=check, **kwargs)
 
 
-def nix_cmd(*args):
-    return [
-        str(NIX_CHROOT), str(NIX_ROOT),
-        str(HOME / ".nix-profile" / "bin" / "nix"),
-        *args,
-    ]
+def chroot_nix(*args):
+    nix_profile = f"/home/{USER}/.nix-profile/bin"
+    return [str(NIX_CHROOT_BIN), str(NIX_ROOT), f"{nix_profile}/nix", *args]
+
+
+def chroot_nix_channel(*args):
+    nix_profile = f"/home/{USER}/.nix-profile/bin"
+    return [str(NIX_CHROOT_BIN), str(NIX_ROOT), f"{nix_profile}/nix-channel", *args]
 
 
 def setup_nix_user_chroot():
-    if NIX_CHROOT.exists():
+    if NIX_CHROOT_BIN.exists():
         return
 
     print("Installing nix-user-chroot...")
-    NIX_CHROOT.parent.mkdir(parents=True, exist_ok=True)
-    run("curl", "-sL", NIX_CHROOT_URL, "-o", str(NIX_CHROOT), check=True)
-    NIX_CHROOT.chmod(0o755)
+    NIX_CHROOT_BIN.parent.mkdir(parents=True, exist_ok=True)
+    run("curl", "-sL", NIX_CHROOT_URL, "-o", str(NIX_CHROOT_BIN), check=True)
+    NIX_CHROOT_BIN.chmod(0o755)
 
 
 def setup_nix():
@@ -71,7 +72,7 @@ def setup_nix():
     installer.chmod(0o755)
 
     run(
-        str(NIX_CHROOT), str(NIX_ROOT),
+        str(NIX_CHROOT_BIN), str(NIX_ROOT),
         "sh", str(installer), "--no-daemon", "--yes",
         check=True,
     )
@@ -81,7 +82,9 @@ def setup_nix():
 def configure_nix():
     print("Configuring Nix...")
     NIX_CONF.parent.mkdir(parents=True, exist_ok=True)
-    NIX_CONF.write_text("experimental-features = nix-command flakes\n")
+    NIX_CONF.write_text(
+        "experimental-features = nix-command flakes\n"
+    )
 
     NIX_FISH.parent.mkdir(parents=True, exist_ok=True)
     NIX_FISH.write_text(
@@ -94,23 +97,25 @@ def configure_nix():
 def add_channels():
     print("Adding Nix channels...")
     result = run(
-        *nix_cmd("channel", "--list"),
+        *chroot_nix_channel("--list"),
         capture_output=True, text=True,
     )
     if "nixpkgs" not in result.stdout:
-        run(*nix_cmd("channel", "--add", "https://nixos.org/channels/nixpkgs-unstable", "nixpkgs"), check=True)
-    run(*nix_cmd("channel", "--update"), check=True)
+        run(*chroot_nix_channel("--add", "https://nixos.org/channels/nixpkgs-unstable", "nixpkgs"), check=True)
+    run(*chroot_nix_channel("--update"), check=True)
 
 
 def get_installed_packages():
     result = run(
-        *nix_cmd("profile", "list"),
+        *chroot_nix("profile", "list"),
         capture_output=True, text=True,
     )
+    import re
     packages = []
     for line in result.stdout.splitlines():
         if line.startswith("Name:"):
-            name = line.split()[-1]
+            clean = re.sub(r"\x1b\[[0-9;]*m", "", line)
+            name = clean.split()[-1]
             packages.append(name)
     return packages
 
@@ -119,12 +124,15 @@ def install_packages():
     installed = get_installed_packages()
     print(f"Installed packages: {installed}")
 
+    env = os.environ.copy()
+    env["NIXPKGS_ALLOW_UNFREE"] = "1"
+
     for pkg in NIX_PACKAGES:
         if pkg in installed:
             print(f"  {pkg} already installed, skipping")
             continue
         print(f"  Installing {pkg}...")
-        run(*nix_cmd("profile", "add", f"nixpkgs#{pkg}"), check=False)
+        run(*chroot_nix("profile", "add", "--impure", f"nixpkgs#{pkg}"), check=False, env=env)
 
 
 def main():
